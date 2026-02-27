@@ -366,3 +366,37 @@ export async function getTmdbPoster(
     return { poster: null, backdrop: null };
   }
 }
+
+export interface TmdbCastMember {
+  id: number;
+  name: string;
+  character: string;
+  profile_path: string | null;
+  profileUrl: string | null;
+}
+
+export async function getTmdbCast(
+  tmdbId: number | undefined,
+  tmdbApiKey: string,
+  limit = 10
+): Promise<TmdbCastMember[]> {
+  if (!tmdbId || !tmdbApiKey) return [];
+  try {
+    const response = await axios.get(
+      `https://api.themoviedb.org/3/tv/${tmdbId}/aggregate_credits`,
+      { params: { api_key: tmdbApiKey } }
+    );
+    const cast: any[] = response.data.cast ?? [];
+    return cast.slice(0, limit).map((m) => ({
+      id: m.id,
+      name: m.name,
+      character: m.roles?.[0]?.character ?? '',
+      profile_path: m.profile_path,
+      profileUrl: m.profile_path
+        ? `https://image.tmdb.org/t/p/w185${m.profile_path}`
+        : null,
+    }));
+  } catch {
+    return [];
+  }
+}

@@ -139,7 +139,7 @@ export function ShowCard({
                   : 'Up to date'}
               </Text>
             </View>
-          ) : category === 'ended' && isFullyWatched ? (
+          ) : (show.status === 'ended' || show.status === 'canceled') && isFullyWatched ? (
             <View style={[styles.tag, styles.tagSmall, { backgroundColor: 'rgba(16,185,129,0.2)', flexDirection: 'row', alignItems: 'center', gap: 3 }]}>
               <Ionicons name="checkmark-circle" size={10} color="#10b981" />
               <Text style={[styles.tagText, styles.tagTextSmall, { color: '#10b981' }]}>Finished</Text>

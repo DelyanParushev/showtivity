@@ -14,7 +14,7 @@ import {
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { getShowDetails, getNextEpisode, getShowProgress, getTmdbPoster } from '../../services/traktApi';
+import { getShowDetails, getNextEpisode, getShowProgress, getTmdbPoster, getTmdbCast } from '../../services/traktApi';
 import { useAddToWatchlist, useRemoveFromWatchlist, useAllShows } from '../../hooks/useShows';
 import { useAuthStore } from '../../store/authStore';
 import { Colors, Radius, Spacing, Typography, CategoryConfig } from '../../constants/theme';
@@ -74,6 +74,14 @@ export default function ShowDetailScreen() {
   const { data: tmdbImages } = useQuery({
     queryKey: ['tmdbPoster', tmdbId],
     queryFn: () => getTmdbPoster(tmdbId, TMDB_CONFIG.API_KEY),
+    enabled: !!tmdbId && !!TMDB_CONFIG.API_KEY,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+  });
+
+  const { data: castMembers = [] } = useQuery({
+    queryKey: ['tmdbCast', tmdbId],
+    queryFn: () => getTmdbCast(tmdbId, TMDB_CONFIG.API_KEY, 10),
     enabled: !!tmdbId && !!TMDB_CONFIG.API_KEY,
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
@@ -317,7 +325,33 @@ export default function ShowDetailScreen() {
           </View>
         )}
 
-        {/* Show Details */}
+        {/* Cast */}
+        {castMembers.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Cast</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.castList}>
+              {castMembers.map((member) => (
+                <View key={member.id} style={styles.castCard}>
+                  {member.profileUrl ? (
+                    <Image
+                      source={{ uri: member.profileUrl }}
+                      style={styles.castPhoto}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[styles.castPhoto, styles.castPhotoFallback]}>
+                      <Ionicons name="person" size={24} color={Colors.text.muted} />
+                    </View>
+                  )}
+                  <Text style={styles.castName} numberOfLines={2}>{member.name}</Text>
+                  {member.character ? (
+                    <Text style={styles.castCharacter} numberOfLines={2}>{member.character}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Details</Text>
           <View style={styles.detailsGrid}>
@@ -642,7 +676,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   detailLabel: {
-    color: Colors.text.muted,
+    color: Colors.text.secondary,
     fontSize: Typography.sm,
   },
   detailValue: {
@@ -668,6 +702,38 @@ const styles = StyleSheet.create({
   genreText: {
     color: Colors.text.secondary,
     fontSize: Typography.sm,
+  },
+  // Cast
+  castList: {
+    gap: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  castCard: {
+    width: 80,
+    alignItems: 'center',
+    gap: 5,
+  },
+  castPhoto: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.bg.elevated,
+    overflow: 'hidden',
+  },
+  castPhotoFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  castName: {
+    color: Colors.text.primary,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  castCharacter: {
+    color: Colors.text.muted,
+    fontSize: 10,
+    textAlign: 'center',
   },
   // Links
   linksRow: {
