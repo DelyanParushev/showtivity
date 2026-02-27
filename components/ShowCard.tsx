@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Dimensions,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,10 +15,7 @@ import { getTmdbPoster } from '../services/traktApi';
 import type { EnrichedShow } from '../types/trakt';
 import { TMDB_CONFIG } from '../config/trakt';
 
-const CARD_WIDTH = Math.min(
-  160,
-  (Dimensions.get('window').width - Spacing.lg * 2 - Spacing.md) / 2
-);
+const CARD_WIDTH = 130;
 const CARD_HEIGHT = CARD_WIDTH * 1.5;
 
 interface ShowCardProps {
@@ -50,6 +46,7 @@ export function ShowCard({
 
   const statusText = showStatusLabel(show.status, nextEpisode?.first_aired, daysUntilNext ?? null);
   const statusCol = showStatusColor(show.status, daysUntilNext ?? null);
+  const isFullyWatched = progress && progress.aired > 0 && progress.completed >= progress.aired;
 
   if (compact) {
     return (
@@ -141,6 +138,11 @@ export function ShowCard({
                   ? `S${String(nextEpisode.season).padStart(2, '0')}E${String(nextEpisode.number).padStart(2, '0')}`
                   : 'Up to date'}
               </Text>
+            </View>
+          ) : category === 'ended' && isFullyWatched ? (
+            <View style={[styles.tag, styles.tagSmall, { backgroundColor: 'rgba(16,185,129,0.2)', flexDirection: 'row', alignItems: 'center', gap: 3 }]}>
+              <Ionicons name="eye" size={10} color="#10b981" />
+              <Text style={[styles.tagText, styles.tagTextSmall, { color: '#10b981' }]}>Watched</Text>
             </View>
           ) : (
             <StatusTag category={category} small />

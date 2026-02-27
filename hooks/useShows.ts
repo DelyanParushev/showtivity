@@ -331,6 +331,9 @@ export function useCategorizedShows() {
     // Caught up + returning series + NO confirmed future date → Airing page only
     // (nothing to watch now AND no countdown to show)
     if (RUNNING_STATUSES.includes(s.show.status) && s.daysUntilNext === null) return false;
+    // Fully watched + ended/canceled → move to ended section, not continue watching
+    const isFullyWatched = s.progress && s.progress.aired > 0 && s.progress.completed >= s.progress.aired;
+    if (ENDED_STATUSES.includes(s.show.status) && isFullyWatched) return false;
     return true;
   });
   const watchlist = shows.filter((s) => s.category === 'watchlist');
@@ -350,14 +353,19 @@ export function useCategorizedShows() {
       s.category === 'waiting' ||
       (s.category === 'watchlist' && WAITING_STATUSES.includes(s.show.status))
   );
-  // Include pure ended shows + actively-watched shows that have already ended
-  // + watchlist shows that have ended (user saved them but never started)
-  const ended = shows.filter(
-    (s) =>
-      s.category === 'ended' ||
-      (s.category === 'watching' && ENDED_STATUSES.includes(s.show.status)) ||
-      (s.category === 'watchlist' && ENDED_STATUSES.includes(s.show.status))
-  );
+  // Include pure ended shows + watchlist shows that ended
+  // + actively-watched shows that are ended AND fully watched
+  const ended = shows.filter((s) => {
+    if (s.category === 'ended') return true;
+    if (s.category === 'watchlist' && ENDED_STATUSES.includes(s.show.status)) return true;
+    if (s.category === 'watching' && ENDED_STATUSES.includes(s.show.status)) {
+      // Only move here once every episode has been watched — partially-watched
+      // ended shows remain in "Continue Watching" until the user finishes them.
+      const isFullyWatched = s.progress && s.progress.aired > 0 && s.progress.completed >= s.progress.aired;
+      return Boolean(isFullyWatched);
+    }
+    return false;
+  });
 
   return { watching, watchlist, running, waiting, ended, isLoading, error, refetch };
 }

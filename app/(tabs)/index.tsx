@@ -194,33 +194,41 @@ function Section({
 
   return (
     <View style={styles.section}>
-      <SectionHeader
-        title={config.label}
-        count={shows.length}
-        color={config.color}
-        icon={config.icon}
-        expanded={expanded}
-        onToggle={onToggle}
-      />
+      <View style={styles.sectionHeaderRow}>
+        <SectionHeader
+          title={config.label}
+          count={shows.length}
+          color={config.color}
+          icon={config.icon}
+          expanded={expanded}
+          onToggle={onToggle}
+        />
+      </View>
 
       {expanded && (
         <>
           {shows.length === 0 ? (
-            <EmptyState
-              icon={config.icon as any}
-              message={emptyMessage}
-              subMessage={emptySubMessage}
-            />
+            <View style={styles.sectionPadded}>
+              <EmptyState
+                icon={config.icon as any}
+                message={emptyMessage}
+                subMessage={emptySubMessage}
+              />
+            </View>
           ) : (
-            <View style={styles.grid}>
-              {shows.map((item) => (
+            <FlatList
+              data={shows}
+              keyExtractor={(item) => String(item.show.ids.trakt)}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalList}
+              renderItem={({ item }) => (
                 <ShowCard
-                  key={item.show.ids.trakt}
                   item={item}
                   onPress={() => onPressShow(item)}
                 />
-              ))}
-            </View>
+              )}
+            />
           )}
         </>
       )}
@@ -310,12 +318,17 @@ const styles = StyleSheet.create({
     fontSize: Typography.sm,
   },
   section: {
-    paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  sectionHeaderRow: {
+    paddingHorizontal: Spacing.lg,
+  },
+  sectionPadded: {
+    paddingHorizontal: Spacing.lg,
+  },
+  horizontalList: {
+    paddingHorizontal: Spacing.lg,
     gap: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
 });
