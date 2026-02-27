@@ -45,13 +45,13 @@ jobs:
 
       - name: Download APK
         run: |
-          curl -L "$APK_URL" -o showtivity.apk
-          ls -lh showtivity.apk
+          curl -L "$APK_URL" -o Showtivity-${{ github.ref_name }}.apk
+          ls -lh Showtivity-${{ github.ref_name }}.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: showtivity.apk
+          files: Showtivity-${{ github.ref_name }}.apk
           name: Showtivity ${{ github.ref_name }}
           body: |
             ## Showtivity ${{ github.ref_name }}
