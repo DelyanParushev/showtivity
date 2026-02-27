@@ -4,15 +4,16 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Image,
   Alert,
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 import { useAuthStore } from '../../store/authStore';
 import { Colors, Radius, Spacing, Typography } from '../../constants/theme';
 import { useCategorizedShows, useAllShows } from '../../hooks/useShows';
@@ -208,7 +209,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.version}>Showtivity v1.0.0</Text>
+        <Text style={styles.version}>Showtivity v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
       </ScrollView>
     </SafeAreaView>
   );

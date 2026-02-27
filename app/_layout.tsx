@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   View,
@@ -16,9 +16,11 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Updates from 'expo-updates';
 import { useAuthStore } from '../store/authStore';
 import { Colors, Radius, Spacing, Typography } from '../constants/theme';
@@ -114,6 +116,31 @@ const showtivityTheme = {
   },
 };
 
+// Custom text-based splash shown while auth is initialising
+function CustomSplash({ visible }: { visible: boolean }) {
+  const opacity = useRef(new Animated.Value(1)).current;
+  const [rendered, setRendered] = useState(true);
+
+  useEffect(() => {
+    if (!visible) {
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }).start(() => setRendered(false));
+    }
+  }, [visible]);
+
+  if (!rendered) return null;
+
+  return (
+    <Animated.View style={[splashStyles.container, { opacity }]} pointerEvents="none">
+      <Text style={splashStyles.show}>Show</Text>
+      <Text style={splashStyles.tivity}>tivity</Text>
+    </Animated.View>
+  );
+}
+
 export default function RootLayout() {
   const initialize = useAuthStore((s) => s.initialize);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -124,43 +151,49 @@ export default function RootLayout() {
     initialize();
   }, []);
 
+  // Hide the native splash (grid icon) as soon as JS is ready — our custom
+  // text splash takes over immediately after with the same background colour.
   useEffect(() => {
-    if (!isLoading && fontsLoaded !== false) {
+    if (fontsLoaded !== false) {
       SplashScreen.hideAsync();
     }
-  }, [isLoading, fontsLoaded]);
+  }, [fontsLoaded]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={showtivityTheme}>
-          <StatusBar style="light" backgroundColor={Colors.bg.primary} />
-          <AuthGuard />
-          <UpdateBanner />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: Colors.bg.primary },
-              animation: 'fade_from_bottom',
-            }}
-          >
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="auth" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="show/[id]"
-              options={{
-                headerShown: true,
-                headerStyle: { backgroundColor: Colors.bg.secondary },
-                headerTintColor: Colors.text.primary,
-                headerTitle: '',
-                headerBackTitle: '',
-                presentation: 'card',
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider value={showtivityTheme}>
+            <StatusBar style="light" backgroundColor={Colors.bg.primary} />
+            <AuthGuard />
+            <UpdateBanner />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: Colors.bg.primary },
+                animation: 'fade_from_bottom',
               }}
-            />
-          </Stack>
-        </ThemeProvider>
-      </QueryClientProvider>
+            >
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="auth" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="show/[id]"
+                options={{
+                  headerShown: true,
+                  headerStyle: { backgroundColor: Colors.bg.secondary },
+                  headerTintColor: Colors.text.primary,
+                  headerTitle: '',
+                  headerBackTitle: '',
+                  presentation: 'card',
+                }}
+              />
+            </Stack>
+            {/* Custom text splash — fades out once auth finishes loading */}
+            <CustomSplash visible={isLoading} />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
@@ -192,5 +225,29 @@ const bannerStyles = StyleSheet.create({
     color: '#fff',
     fontSize: Typography.sm,
     fontWeight: '700',
+  },
+});
+
+const splashStyles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.bg.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 999,
+  },
+  show: {
+    color: Colors.text.primary,
+    fontSize: 52,
+    fontWeight: '800',
+    letterSpacing: -1,
+    lineHeight: 54,
+  },
+  tivity: {
+    color: Colors.accent.primary,
+    fontSize: 52,
+    fontWeight: '800',
+    letterSpacing: -1,
+    lineHeight: 54,
   },
 });
