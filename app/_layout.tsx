@@ -17,6 +17,8 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -57,11 +59,12 @@ function AuthGuard() {
   return null;
 }
 
-// OTA update banner: checks for updates on mount, prompts user if one is available
-function UpdateBanner() {
+// OTA update modal: checks for updates on mount, shows a centered dialog if one is available
+function UpdateModal() {
   const [updateReady, setUpdateReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [changelog, setChangelog] = useState<string[]>([]);
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -71,6 +74,21 @@ function UpdateBanner() {
         if (check.isAvailable) {
           await Updates.fetchUpdateAsync();
           setUpdateReady(true);
+          // Fetch latest release notes from GitHub
+          try {
+            const res = await fetch('https://api.github.com/repos/DelyanParushev/showtivity/releases/latest');
+            const json = await res.json();
+            const body: string = json.body ?? '';
+            // Parse bullet lines as changelog items
+            const items = body
+              .split('\n')
+              .map((l: string) => l.replace(/^[-*]\s*/, '').trim())
+              .filter((l: string) => l.length > 0)
+              .slice(0, 8);
+            setChangelog(items.length > 0 ? items : ['Bug fixes and improvements.']);
+          } catch {
+            setChangelog(['Bug fixes and improvements.']);
+          }
         }
       } catch {
         // silently ignore — no update or no network
@@ -81,26 +99,61 @@ function UpdateBanner() {
   if (!updateReady || dismissed) return null;
 
   return (
-    <View style={bannerStyles.banner}>
-      <Ionicons name="cloud-download-outline" size={18} color="#fff" />
-      <Text style={bannerStyles.text}>A new update is ready!</Text>
-      <TouchableOpacity
-        style={bannerStyles.installBtn}
-        onPress={async () => {
-          setLoading(true);
-          await Updates.reloadAsync();
-        }}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={bannerStyles.installText}>Restart</Text>
-        )}
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => setDismissed(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Ionicons name="close" size={16} color="rgba(255,255,255,0.7)" />
-      </TouchableOpacity>
-    </View>
+    <Modal transparent animationType="fade" visible statusBarTranslucent>
+      <View style={modalStyles.backdrop}>
+        <View style={modalStyles.card}>
+          {/* Header */}
+          <View style={modalStyles.header}>
+            <View style={modalStyles.iconWrap}>
+              <Ionicons name="cloud-download-outline" size={22} color={Colors.accent.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={modalStyles.title}>Update Available</Text>
+              <Text style={modalStyles.subtitle}>A new version of Showtivity is ready</Text>
+            </View>
+          </View>
+
+          {/* Divider */}
+          <View style={modalStyles.divider} />
+
+          {/* Changelog */}
+          <Text style={modalStyles.changelogTitle}>What's new</Text>
+          <ScrollView style={modalStyles.changelogScroll} showsVerticalScrollIndicator={false}>
+            {changelog.map((item, i) => (
+              <View key={i} style={modalStyles.changelogRow}>
+                <View style={modalStyles.changelogDot} />
+                <Text style={modalStyles.changelogText}>{item}</Text>
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Divider */}
+          <View style={modalStyles.divider} />
+
+          {/* Actions */}
+          <TouchableOpacity
+            style={modalStyles.primaryBtn}
+            onPress={async () => {
+              setLoading(true);
+              await Updates.reloadAsync();
+            }}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="refresh-outline" size={16} color="#fff" />
+                <Text style={modalStyles.primaryBtnText}>Restart & Update</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={modalStyles.secondaryBtn} onPress={() => setDismissed(true)}>
+            <Text style={modalStyles.secondaryBtnText}>Remind Me Later</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -166,7 +219,7 @@ export default function RootLayout() {
           <ThemeProvider value={showtivityTheme}>
             <StatusBar style="light" backgroundColor={Colors.bg.primary} />
             <AuthGuard />
-            <UpdateBanner />
+            <UpdateModal />
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -198,33 +251,103 @@ export default function RootLayout() {
   );
 }
 
-const bannerStyles = StyleSheet.create({
-  banner: {
+const modalStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.xl,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: Colors.bg.card,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: '#2563eb',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
-  text: {
-    flex: 1,
-    color: '#fff',
-    fontSize: Typography.sm,
-    fontWeight: '600',
-  },
-  installBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    minWidth: 60,
+  iconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.accent.muted,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  installText: {
-    color: '#fff',
-    fontSize: Typography.sm,
+  title: {
+    color: Colors.text.primary,
+    fontSize: Typography.lg,
     fontWeight: '700',
+  },
+  subtitle: {
+    color: Colors.text.muted,
+    fontSize: Typography.sm,
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: Spacing.md,
+  },
+  changelogTitle: {
+    color: Colors.text.secondary,
+    fontSize: Typography.xs,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: Spacing.sm,
+  },
+  changelogScroll: {
+    maxHeight: 180,
+  },
+  changelogRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginBottom: 6,
+  },
+  changelogDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.accent.primary,
+    marginTop: 6,
+  },
+  changelogText: {
+    flex: 1,
+    color: Colors.text.secondary,
+    fontSize: Typography.sm,
+    lineHeight: 18,
+  },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.accent.primary,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  primaryBtnText: {
+    color: '#fff',
+    fontSize: Typography.base,
+    fontWeight: '700',
+  },
+  secondaryBtn: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  secondaryBtnText: {
+    color: Colors.text.muted,
+    fontSize: Typography.sm,
   },
 });
 

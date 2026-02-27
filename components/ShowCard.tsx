@@ -131,18 +131,18 @@ export function ShowCard({
 
         {/* Category badge */}
         <View style={styles.categoryBadge}>
-          {category === 'watching' ? (
+          {(show.status === 'ended' || show.status === 'canceled') && isFullyWatched ? (
+            <View style={[styles.tag, styles.tagSmall, { backgroundColor: 'rgba(16,185,129,0.2)', flexDirection: 'row', alignItems: 'center', gap: 3 }]}>
+              <Ionicons name="checkmark-circle" size={10} color="#10b981" />
+              <Text style={[styles.tagText, styles.tagTextSmall, { color: '#10b981' }]}>Finished</Text>
+            </View>
+          ) : category === 'watching' ? (
             <View style={[styles.tag, styles.tagSmall, { backgroundColor: Colors.status.watching + '25' }]}>
               <Text style={[styles.tagText, styles.tagTextSmall, { color: Colors.status.watching }]}>
                 {nextEpisode
                   ? `S${String(nextEpisode.season).padStart(2, '0')}E${String(nextEpisode.number).padStart(2, '0')}`
                   : 'Up to date'}
               </Text>
-            </View>
-          ) : (show.status === 'ended' || show.status === 'canceled') && isFullyWatched ? (
-            <View style={[styles.tag, styles.tagSmall, { backgroundColor: 'rgba(16,185,129,0.2)', flexDirection: 'row', alignItems: 'center', gap: 3 }]}>
-              <Ionicons name="checkmark-circle" size={10} color="#10b981" />
-              <Text style={[styles.tagText, styles.tagTextSmall, { color: '#10b981' }]}>Finished</Text>
             </View>
           ) : (
             <StatusTag category={category} small />
