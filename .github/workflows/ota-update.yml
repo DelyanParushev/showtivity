@@ -1,0 +1,53 @@
+name: OTA Update
+
+on:
+  # Push OTA update automatically on every push to main
+  push:
+    branches:
+      - main
+    # Only run when JS/asset files change — skip for config-only changes
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'hooks/**'
+      - 'services/**'
+      - 'store/**'
+      - 'utils/**'
+      - 'constants/**'
+      - 'types/**'
+      - 'assets/**'
+  # Or trigger manually
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Update message'
+        required: false
+        default: 'Manual OTA update'
+
+jobs:
+  update:
+    name: Push OTA update to preview channel
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Publish OTA update
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          MESSAGE="${{ github.event.inputs.message || github.event.head_commit.message }}"
+          eas update --channel preview --message "$MESSAGE" --non-interactive

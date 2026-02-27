@@ -1,0 +1,68 @@
+name: Build & Release APK
+
+on:
+  # Trigger by pushing a version tag: git tag v1.0.1 && git push --tags
+  push:
+    tags:
+      - 'v*'
+  # Or trigger manually from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK and create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Build APK via EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas build --platform android --profile preview --non-interactive --wait
+
+      - name: Get APK download URL
+        id: get_url
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          URL=$(eas build:list --platform android --status finished --limit 1 --json --non-interactive | jq -r '.[0].artifacts.buildUrl')
+          echo "APK_URL=$URL" >> $GITHUB_ENV
+          echo "Found APK at: $URL"
+
+      - name: Download APK
+        run: |
+          curl -L "$APK_URL" -o showtivity.apk
+          ls -lh showtivity.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: showtivity.apk
+          name: Showtivity ${{ github.ref_name }}
+          body: |
+            ## Showtivity ${{ github.ref_name }}
+
+            ### Install
+            1. Download `showtivity.apk` below
+            2. Open it on your Android phone
+            3. Allow "Install from unknown sources" if prompted
+            4. Install
+
+            ### What's new
+            See commits since last release.
+          draft: false
+          prerelease: false
