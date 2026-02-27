@@ -108,7 +108,7 @@ export function showStatusLabel(
   if (s === 'returning series' || s === 'continuing') return 'Returning Series';
   if (s === 'in production') return 'In Production';
   if (s === 'planned' || s === 'upcoming' || s === 'pilot') return 'Coming Soon';
-  return 'TBA';
+  return 'Returning Series';
 }
 
 /**
