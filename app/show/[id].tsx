@@ -11,7 +11,7 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { getShowDetails, getNextEpisode, getShowProgress, getTmdbPoster, getTmdbCast } from '../../services/traktApi';
@@ -26,6 +26,7 @@ import { TMDB_CONFIG } from '../../config/trakt';
 export default function ShowDetailScreen() {
   const { id, title } = useLocalSearchParams<{ id: string; title: string }>();
   const navigation = useNavigation();
+  const router = useRouter();
   const getValidToken = useAuthStore((s) => s.getValidToken);
   const [backdropFailed, setBackdropFailed] = useState(false);
   const [posterFailed, setPosterFailed] = useState(false);
@@ -331,7 +332,17 @@ export default function ShowDetailScreen() {
             <Text style={styles.sectionTitle}>Cast</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.castList}>
               {castMembers.map((member) => (
-                <View key={member.id} style={styles.castCard}>
+                <TouchableOpacity
+                  key={member.id}
+                  style={styles.castCard}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/person/[id]',
+                      params: { id: String(member.id), name: member.name },
+                    })
+                  }
+                  activeOpacity={0.75}
+                >
                   {member.profileUrl ? (
                     <Image
                       source={{ uri: member.profileUrl }}
@@ -347,7 +358,7 @@ export default function ShowDetailScreen() {
                   {member.character ? (
                     <Text style={styles.castCharacter} numberOfLines={2}>{member.character}</Text>
                   ) : null}
-                </View>
+                </TouchableOpacity>
               ))}
             </ScrollView>
           </View>

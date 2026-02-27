@@ -243,6 +243,17 @@ export default function RootLayout() {
                   presentation: 'card',
                 }}
               />
+              <Stack.Screen
+                name="person/[id]"
+                options={{
+                  headerShown: true,
+                  headerStyle: { backgroundColor: Colors.bg.secondary },
+                  headerTintColor: Colors.text.primary,
+                  headerTitle: '',
+                  headerBackTitle: '',
+                  presentation: 'card',
+                }}
+              />
             </Stack>
             {/* Custom text splash — fades out once auth finishes loading */}
             <CustomSplash visible={isLoading} />

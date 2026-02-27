@@ -375,6 +375,77 @@ export interface TmdbCastMember {
   profileUrl: string | null;
 }
 
+export interface TmdbPerson {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  gender: number; // 0=not set, 1=female, 2=male, 3=non-binary
+  known_for_department: string;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  imdb_id: string | null;
+  popularity: number;
+}
+
+export interface TmdbTvCredit {
+  id: number;
+  name: string;
+  character: string;
+  episode_count: number;
+  first_air_date: string | null;
+  posterUrl: string | null;
+  vote_average: number;
+}
+
+export async function getTmdbPersonDetails(
+  personId: number,
+  tmdbApiKey: string
+): Promise<TmdbPerson | null> {
+  if (!personId || !tmdbApiKey) return null;
+  try {
+    const response = await axios.get(
+      `https://api.themoviedb.org/3/person/${personId}`,
+      { params: { api_key: tmdbApiKey } }
+    );
+    return response.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function getTmdbPersonCredits(
+  personId: number,
+  tmdbApiKey: string,
+  limit = 25
+): Promise<TmdbTvCredit[]> {
+  if (!personId || !tmdbApiKey) return [];
+  try {
+    const response = await axios.get(
+      `https://api.themoviedb.org/3/person/${personId}/tv_credits`,
+      { params: { api_key: tmdbApiKey } }
+    );
+    const cast: any[] = response.data.cast ?? [];
+    return cast
+      .sort((a, b) => (b.episode_count ?? 0) - (a.episode_count ?? 0))
+      .slice(0, limit)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        character: c.character ?? '',
+        episode_count: c.episode_count ?? 0,
+        first_air_date: c.first_air_date ?? null,
+        posterUrl: c.poster_path
+          ? `https://image.tmdb.org/t/p/w185${c.poster_path}`
+          : null,
+        vote_average: c.vote_average ?? 0,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getTmdbCast(
   tmdbId: number | undefined,
   tmdbApiKey: string,
