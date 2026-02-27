@@ -370,6 +370,24 @@ export function useCategorizedShows() {
       s.category === 'waiting' ||
       (s.category === 'watchlist' && WAITING_STATUSES.includes(s.show.status))
   );
+  // Awaiting Release Date (Airing page) — every tracked non-ended show with
+  // no confirmed future air date, regardless of how much the user has watched.
+  // Covers: caught-up returning series, in-production shows, partially-watched
+  // shows whose season ended and next season has no date yet, etc.
+  const awaitingRelease = shows.filter((s) => {
+    if (ENDED_STATUSES.includes(s.show.status)) return false;
+    if (s.daysUntilNext !== null) return false; // has a confirmed future date
+    if (s.category === 'watching') return true; // any actively-tracked show
+    if (s.category === 'waiting') return true;
+    if (s.category === 'watchlist') {
+      return (
+        RUNNING_STATUSES.includes(s.show.status) ||
+        WAITING_STATUSES.includes(s.show.status)
+      );
+    }
+    return false;
+  });
+
   // Include pure ended shows + watchlist shows that ended
   // + actively-watched shows that are ended AND fully watched
   const ended = shows.filter((s) => {
@@ -384,7 +402,7 @@ export function useCategorizedShows() {
     return false;
   });
 
-  return { watching, watchlist, running, waiting, ended, isLoading, error, refetch };
+  return { watching, watchlist, running, waiting, awaitingRelease, ended, isLoading, error, refetch };
 }
 
 // ─── Seasons & Episodes ────────────────────────────────────────────────────────

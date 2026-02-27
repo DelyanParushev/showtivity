@@ -16,7 +16,7 @@ import type { EnrichedShow } from '../../types/trakt';
 
 export default function RunningScreen() {
   const router = useRouter();
-  const { running, waiting, isLoading, refetch } = useCategorizedShows();
+  const { running, awaitingRelease, isLoading, refetch } = useCategorizedShows();
 
   const navigateTo = (show: EnrichedShow) =>
     router.push({
@@ -24,17 +24,15 @@ export default function RunningScreen() {
       params: { id: show.show.ids.slug, title: show.show.title },
     });
 
-  const airingToday = running.filter((s) => (s.daysUntilNext ?? null) !== null && (s.daysUntilNext ?? 999) <= 0);
+  // Only show episodes airing today or in the future — past dates mean the user
+  // just has unwatched episodes to catch up on (those stay in Currently Watching)
+  const airingToday = running.filter((s) => s.daysUntilNext === 0);
   const airingThisWeek = running.filter(
-    (s) => (s.daysUntilNext ?? null) !== null && (s.daysUntilNext ?? 999) > 0 && (s.daysUntilNext ?? 999) <= 7
+    (s) => s.daysUntilNext !== null && s.daysUntilNext > 0 && s.daysUntilNext <= 7
   );
-  const airingLater = running.filter((s) => (s.daysUntilNext ?? null) !== null && (s.daysUntilNext ?? 999) > 7);
+  const airingLater = running.filter((s) => s.daysUntilNext !== null && s.daysUntilNext > 7);
 
-  // Awaiting release: explicit waiting-status shows + running shows with no confirmed date yet
-  const runningNoDate = running.filter((s) => s.daysUntilNext == null);
-  const awaitingRelease = [...waiting, ...runningNoDate];
-
-  const totalCount = running.length + waiting.length;
+  const totalCount = running.filter((s) => s.daysUntilNext !== null && s.daysUntilNext >= 0).length + awaitingRelease.length;
 
   if (isLoading) {
     return (

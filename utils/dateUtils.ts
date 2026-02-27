@@ -80,21 +80,18 @@ export function showStatusLabel(
   nextEpisodeDate: string | null | undefined,
   daysUntilNext: number | null
 ): string {
-  // Episode airing today
-  if (nextEpisodeDate && daysUntilNext === 0) return 'Airing today';
-  // Episode already aired — new content available to watch
-  if (nextEpisodeDate && daysUntilNext !== null && daysUntilNext < 0) return 'New episode available';
-  // Future air date is known
-  if (nextEpisodeDate && daysUntilNext !== null && daysUntilNext > 0) {
+  // Only show a countdown for confirmed future/today episodes
+  if (nextEpisodeDate && daysUntilNext !== null && daysUntilNext >= 0) {
+    if (daysUntilNext === 0) return 'Airing today';
     const d = daysUntilNext;
-    if (d === 1) return 'Returning tomorrow';
-    if (d < 7) return `Returning in ${d} days`;
-    if (d < 14) return 'Returning next week';
-    if (d < 60) return `Returning in ${Math.round(d / 7)} weeks`;
-    if (d < 365) return `Returning in ${Math.round(d / 30)} months`;
-    return `Returning in ${Math.round(d / 365)} years`;
+    if (d === 1) return 'Tomorrow';
+    if (d < 7) return `In ${d} days`;
+    if (d < 14) return 'Next week';
+    if (d < 60) return `In ${Math.round(d / 7)} weeks`;
+    if (d < 365) return `In ${Math.round(d / 30)} months`;
+    return `In ${Math.round(d / 365)} years`;
   }
-  // No air date — derive from show status
+  // Past date or no date — derive label from show status
   const s = (status ?? '').toLowerCase();
   if (s === 'ended') return 'Ended';
   if (s === 'canceled') return 'Canceled';
@@ -111,7 +108,7 @@ export function showStatusColor(
   status: string | null | undefined,
   daysUntilNext: number | null
 ): string {
-  if (daysUntilNext !== null) return '#10b981'; // green — any dated episode
+  if (daysUntilNext !== null && daysUntilNext >= 0) return '#10b981'; // green — airing today or future
   const s = (status ?? '').toLowerCase();
   if (s === 'ended' || s === 'canceled') return '#6b7280'; // gray
   return '#f59e0b'; // amber — undated returning / in-production
