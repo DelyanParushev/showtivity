@@ -51,22 +51,17 @@ export default function ProfileScreen() {
     try {
       const check = await Updates.checkForUpdateAsync();
       if (check.isAvailable) {
+        await Updates.fetchUpdateAsync();
         Alert.alert(
-          'Update Available',
-          'A new version is ready to install. Restart the app to apply it.',
+          '🚀 Update Ready',
+          'A new version has been downloaded. Restart now to apply it.',
           [
-            { text: 'Later', style: 'cancel' },
-            {
-              text: 'Restart Now',
-              onPress: async () => {
-                await Updates.fetchUpdateAsync();
-                await Updates.reloadAsync();
-              },
-            },
+            { text: 'Remind Me Later', style: 'cancel' },
+            { text: 'Restart Now', style: 'default', onPress: () => Updates.reloadAsync() },
           ]
         );
       } else {
-        Alert.alert('Up to Date', 'You are already on the latest version.');
+        Alert.alert('✓ Up to Date', 'You are already on the latest version.');
       }
     } catch {
       Alert.alert('Error', 'Could not check for updates. Please try again later.');
