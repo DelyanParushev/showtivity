@@ -401,7 +401,7 @@ export function useCategorizedShows() {
   // shows whose season ended and next season has no date yet, etc.
   const awaitingRelease = shows.filter((s) => {
     if (ENDED_STATUSES.includes(s.show.status)) return false;
-    if (s.daysUntilNext !== null) return false; // has a confirmed future date
+    if (s.daysUntilNext !== null && s.daysUntilNext >= 0) return false; // has a confirmed future date
     if (s.category === 'watching') return true; // any actively-tracked show
     if (s.category === 'waiting') return true;
     if (s.category === 'watchlist') {
