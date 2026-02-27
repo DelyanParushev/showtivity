@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Updates from 'expo-updates';
 import { useAuthStore } from '../../store/authStore';
 import { Colors, Radius, Spacing, Typography } from '../../constants/theme';
 import { useCategorizedShows, useAllShows } from '../../hooks/useShows';
@@ -39,6 +40,36 @@ export default function ProfileScreen() {
 
   const handleSync = async () => {
     await refetch();
+  };
+
+  const handleCheckForUpdates = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Updates', 'OTA updates are only available on the mobile app.');
+      return;
+    }
+    try {
+      const check = await Updates.checkForUpdateAsync();
+      if (check.isAvailable) {
+        Alert.alert(
+          'Update Available',
+          'A new version is ready to install. Restart the app to apply it.',
+          [
+            { text: 'Later', style: 'cancel' },
+            {
+              text: 'Restart Now',
+              onPress: async () => {
+                await Updates.fetchUpdateAsync();
+                await Updates.reloadAsync();
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Up to Date', 'You are already on the latest version.');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not check for updates. Please try again later.');
+    }
   };
 
   const totalShows = allShows.length;
@@ -139,6 +170,12 @@ export default function ProfileScreen() {
               label="Sync with Trakt"
               onPress={handleSync}
               color={Colors.status.watching}
+            />
+            <MenuItem
+              icon="cloud-download-outline"
+              label="Check for Updates"
+              onPress={handleCheckForUpdates}
+              color={Colors.status.running}
             />
             <MenuItem
               icon="open-outline"

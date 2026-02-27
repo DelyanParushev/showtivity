@@ -155,7 +155,6 @@ export function ShowCard({
         <Text style={styles.cardTitle} numberOfLines={2}>
           {show.title}
         </Text>
-        <Text style={styles.cardYear}>{show.year}</Text>
 
         {/* Status */}
         <View style={styles.countdownRow}>

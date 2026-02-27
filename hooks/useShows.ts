@@ -103,9 +103,18 @@ export function useAllShows() {
         const detailIdx = watchedOnlyShows.findIndex(
           (w) => w.show.ids.trakt === id
         );
+        // For watched-only shows: use freshly fetched full details (has rating).
+        // For shows that are also in the watchlist: reuse the watchlist entry's
+        // show object — it was fetched with extended=full so it includes rating.
+        const existingEntry = allShowsMap.get(id);
+        const showData =
+          notInWatchlist && detailIdx >= 0
+            ? fullDetails[detailIdx]
+            : (existingEntry?.show ?? item.show);
         allShowsMap.set(id, {
-          show: notInWatchlist && detailIdx >= 0 ? fullDetails[detailIdx] : item.show,
+          show: showData,
           category: 'watching',
+          watchlistId: existingEntry?.watchlistId,
           lastWatchedAt: item.last_watched_at,
         });
       });
