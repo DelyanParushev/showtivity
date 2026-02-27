@@ -307,6 +307,25 @@ export async function getRecommendations(
   return response.data;
 }
 
+export async function getTrendingShows(
+  limit = 40
+): Promise<{ watchers: number; show: TraktShowExtended }[]> {
+  const client = createApiClient();
+  const response = await client.get<{ watchers: number; show: TraktShowExtended }[]>(
+    '/shows/trending',
+    { params: { extended: 'full', limit } }
+  );
+  return response.data;
+}
+
+export async function getPopularShows(limit = 40): Promise<TraktShowExtended[]> {
+  const client = createApiClient();
+  const response = await client.get<TraktShowExtended[]>('/shows/popular', {
+    params: { extended: 'full', limit },
+  });
+  return response.data;
+}
+
 // ─── Search ────────────────────────────────────────────────────────────────────
 
 export async function searchShows(

@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { useSearchShows, useAddToWatchlist, useAllShows, useRecommendations } from '../../hooks/useShows';
+import { useSearchShows, useAddToWatchlist, useAllShows, useRecommendations, useTrendingShows, usePopularShows } from '../../hooks/useShows';
 import { EmptyState } from '../../components/UI';
 import { Colors, Radius, Spacing, Typography } from '../../constants/theme';
 import type { TraktSearchResult, TraktShowExtended } from '../../types/trakt';
@@ -34,6 +34,8 @@ export default function SearchScreen() {
   const { data: results = [], isFetching } = useSearchShows(debouncedQuery);
   const { data: myShows = [] } = useAllShows();
   const { data: recommendations = [], isLoading: recsLoading } = useRecommendations();
+  const { data: trending = [], isLoading: trendingLoading } = useTrendingShows();
+  const { data: popular = [], isLoading: popularLoading } = usePopularShows();
   const addMutation = useAddToWatchlist();
 
   const myShowIds = new Set(myShows.map((s) => s.show.ids.trakt));
@@ -95,7 +97,7 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      {/* Body: recommendations (idle) OR search results (typing) */}
+      {/* Body: discover sections (idle) OR search results (typing) */}
       {debouncedQuery.length < 2 ? (
         <ScrollView
           style={styles.flex}
@@ -103,19 +105,46 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <RecommendationsSection
-            recommendations={recommendations}
+          <HorizontalShowSection
+            title="Recommended for You"
+            subtitle="Personalised picks based on your Trakt history"
+            icon="sparkles"
+            iconColor={Colors.accent.primary}
+            shows={recommendations}
             isLoading={recsLoading}
             myShowIds={myShowIds}
             optimisticAdded={optimisticAdded}
             addingId={addingId}
             onAdd={handleAddRec}
-            onPress={(show) =>
-              router.push({
-                pathname: '/show/[id]',
-                params: { id: show.ids.slug, title: show.title },
-              })
-            }
+            onPress={(show) => router.push({ pathname: '/show/[id]', params: { id: show.ids.slug, title: show.title } })}
+          />
+          <View style={styles.sectionDivider} />
+          <HorizontalShowSection
+            title="Trending"
+            subtitle="What everyone is watching right now"
+            icon="trending-up"
+            iconColor={Colors.status.running}
+            shows={trending}
+            isLoading={trendingLoading}
+            myShowIds={myShowIds}
+            optimisticAdded={optimisticAdded}
+            addingId={addingId}
+            onAdd={handleAddRec}
+            onPress={(show) => router.push({ pathname: '/show/[id]', params: { id: show.ids.slug, title: show.title } })}
+          />
+          <View style={styles.sectionDivider} />
+          <HorizontalShowSection
+            title="Popular"
+            subtitle="All-time fan favourites"
+            icon="flame"
+            iconColor="#f97316"
+            shows={popular}
+            isLoading={popularLoading}
+            myShowIds={myShowIds}
+            optimisticAdded={optimisticAdded}
+            addingId={addingId}
+            onAdd={handleAddRec}
+            onPress={(show) => router.push({ pathname: '/show/[id]', params: { id: show.ids.slug, title: show.title } })}
           />
         </ScrollView>
       ) : (
@@ -175,10 +204,14 @@ export default function SearchScreen() {
   );
 }
 
-// ─── Recommendations Section ───────────────────────────────────────────────────
+// ─── Horizontal Show Section ─────────────────────────────────────────────────
 
-interface RecommendationsSectionProps {
-  recommendations: TraktShowExtended[];
+interface HorizontalShowSectionProps {
+  title: string;
+  subtitle: string;
+  icon: string;
+  iconColor: string;
+  shows: TraktShowExtended[];
   isLoading: boolean;
   myShowIds: Set<number>;
   optimisticAdded: Set<number>;
@@ -187,33 +220,35 @@ interface RecommendationsSectionProps {
   onPress: (show: TraktShowExtended) => void;
 }
 
-function RecommendationsSection({
-  recommendations,
+function HorizontalShowSection({
+  title,
+  subtitle,
+  icon,
+  iconColor,
+  shows,
   isLoading,
   myShowIds,
   optimisticAdded,
   addingId,
   onAdd,
   onPress,
-}: RecommendationsSectionProps) {
+}: HorizontalShowSectionProps) {
   return (
     <View style={styles.recsSection}>
       <View style={styles.recsSectionHeader}>
-        <Ionicons name="sparkles" size={16} color={Colors.accent.primary} />
-        <Text style={styles.recsSectionTitle}>Recommended for You</Text>
+        <Ionicons name={icon as any} size={16} color={iconColor} />
+        <Text style={styles.recsSectionTitle}>{title}</Text>
       </View>
-      <Text style={styles.recsSectionSub}>Personalised picks based on your Trakt history</Text>
+      <Text style={styles.recsSectionSub}>{subtitle}</Text>
 
       {isLoading ? (
         <View style={styles.recsLoading}>
-          <ActivityIndicator size="small" color={Colors.accent.primary} />
-          <Text style={styles.recsLoadingText}>Loading recommendations…</Text>
+          <ActivityIndicator size="small" color={iconColor} />
+          <Text style={styles.recsLoadingText}>Loading…</Text>
         </View>
-      ) : recommendations.length === 0 ? (
+      ) : shows.length === 0 ? (
         <View style={styles.recsEmpty}>
-          <Text style={styles.recsEmptyText}>
-            No recommendations yet — keep watching and Trakt will personalise this for you.
-          </Text>
+          <Text style={styles.recsEmptyText}>Nothing to show here yet.</Text>
         </View>
       ) : (
         <ScrollView
@@ -221,7 +256,7 @@ function RecommendationsSection({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.recsScroll}
         >
-          {recommendations.map((show) => {
+          {shows.map((show) => {
             const id = show.ids.trakt;
             const inList = myShowIds.has(id) || optimisticAdded.has(id);
             return (
@@ -237,12 +272,6 @@ function RecommendationsSection({
           })}
         </ScrollView>
       )}
-
-      <View style={styles.recsDivider}>
-        <View style={styles.recsDividerLine} />
-        <Text style={styles.recsDividerText}>or search below</Text>
-        <View style={styles.recsDividerLine} />
-      </View>
     </View>
   );
 }
@@ -562,21 +591,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
   },
-  recsDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.sm,
-  },
-  recsDividerLine: {
-    flex: 1,
+  sectionDivider: {
     height: 1,
     backgroundColor: Colors.border,
-  },
-  recsDividerText: {
-    color: Colors.text.muted,
-    fontSize: Typography.xs,
+    marginBottom: Spacing.lg,
   },
   // Result card
   resultCard: {

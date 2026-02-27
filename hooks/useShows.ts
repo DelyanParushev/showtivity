@@ -9,6 +9,8 @@ import {
   addToWatchlist,
   removeFromWatchlist,
   getRecommendations,
+  getTrendingShows,
+  getPopularShows,
   getSeasons,
   getSeasonEpisodes,
   markEpisodeWatched,
@@ -30,6 +32,8 @@ export const queryKeys = {
   search: (q: string) => ['search', q] as const,
   allShows: ['allShows'] as const,
   recommendations: ['recommendations'] as const,
+  trending: ['trending'] as const,
+  popular: ['popular'] as const,
   seasons: (slug: string) => ['seasons', slug] as const,
   seasonEpisodes: (slug: string, season: number) => ['seasonEpisodes', slug, season] as const,
   showProgressDetail: (slug: string) => ['showProgressDetail', slug] as const,
@@ -233,11 +237,32 @@ export function useRecommendations() {
     queryFn: async () => {
       const token = await getValidToken();
       if (!token) return [];
-      return getRecommendations(token, 20);
+      return getRecommendations(token, 100);
     },
     enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export function useTrendingShows(limit = 40) {
+  return useQuery<TraktShowExtended[]>({
+    queryKey: queryKeys.trending,
+    queryFn: async () => {
+      const items = await getTrendingShows(limit);
+      return items.map((i) => i.show);
+    },
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePopularShows(limit = 40) {
+  return useQuery<TraktShowExtended[]>({
+    queryKey: queryKeys.popular,
+    queryFn: async () => getPopularShows(limit),
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
