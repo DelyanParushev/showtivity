@@ -9,6 +9,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing, Typography } from '../constants/theme';
+import { differenceInHours, parseISO } from 'date-fns';
 import { showStatusLabel, showStatusColor, formatAirDate } from '../utils/dateUtils';
 import { getTmdbPoster } from '../services/traktApi';
 import type { EnrichedShow } from '../types/trakt';
@@ -24,6 +25,9 @@ export function RunningShowCard({ item, onPress }: RunningShowCardProps) {
   const days = daysUntilNext ?? null;
   const color = showStatusColor(show.status, days);
   const label = showStatusLabel(show.status, nextEpisode?.first_aired, days);
+  const hoursUntil = nextEpisode?.first_aired
+    ? differenceInHours(parseISO(nextEpisode.first_aired), new Date())
+    : null;
 
   const completionPct =
     progress && progress.aired > 0
@@ -85,12 +89,24 @@ export function RunningShowCard({ item, onPress }: RunningShowCardProps) {
 
       {/* Countdown circle */}
       <View style={[styles.countdownCircle, { backgroundColor: color }]}>
-        <Text style={styles.countdownDays}>
-          {days !== null && days >= 0 ? days : '—'}
-        </Text>
-        <Text style={styles.countdownDaysLabel}>
-          {days === 0 ? 'today' : 'days'}
-        </Text>
+        {days === 0 && hoursUntil !== null && hoursUntil <= 0 ? (
+          // Already aired today
+          <Text style={styles.countdownNow}>Now</Text>
+        ) : days === 0 && hoursUntil !== null && hoursUntil > 0 ? (
+          // Airing later today — show hours
+          <>
+            <Text style={styles.countdownDays}>{hoursUntil}</Text>
+            <Text style={styles.countdownDaysLabel}>hrs</Text>
+          </>
+        ) : (
+          // Future days or unknown
+          <>
+            <Text style={styles.countdownDays}>
+              {days !== null && days >= 0 ? days : '—'}
+            </Text>
+            <Text style={styles.countdownDaysLabel}>days</Text>
+          </>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -233,5 +249,11 @@ const styles = StyleSheet.create({
   countdownDaysLabel: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 9,
+  },
+  countdownNow: {
+    color: '#fff',
+    fontSize: Typography.sm,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });

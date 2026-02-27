@@ -21,18 +21,21 @@ import { useAuthStore } from '../../store/authStore';
 import type { EnrichedShow } from '../../types/trakt';
 
 type SectionKey = 'watching' | 'watchlist' | 'ended';
-type FilterValue = 'All' | 'Ended' | 'Returning Series' | 'Canceled';
+type FilterValue = 'All' | 'Ended' | 'Returning Series' | 'Canceled' | 'Finished';
 
 const FILTER_OPTIONS: FilterValue[] = ['All', 'Ended', 'Returning Series', 'Canceled'];
+const ENDED_FILTER_OPTIONS: FilterValue[] = ['All', 'Ended', 'Returning Series', 'Canceled', 'Finished'];
 
 function filterShows(shows: EnrichedShow[], filter: FilterValue): EnrichedShow[] {
   if (filter === 'All') return shows;
-  if (filter === 'Ended') return shows.filter((s) => s.show.status === 'ended');
+  if (filter === 'Ended') return shows.filter((s) => s.show.status === 'ended' && s.category !== 'watching');
   if (filter === 'Returning Series')
     return shows.filter(
       (s) => s.show.status === 'returning series' || s.show.status === 'continuing'
     );
-  if (filter === 'Canceled') return shows.filter((s) => s.show.status === 'canceled');
+  if (filter === 'Canceled') return shows.filter((s) => s.show.status === 'canceled' && s.category !== 'watching');
+  // Finished = fully-watched ended/canceled shows (category stays 'watching' until fully done)
+  if (filter === 'Finished') return shows.filter((s) => s.category === 'watching');
   return shows;
 }
 
@@ -192,7 +195,7 @@ export default function HomeScreen() {
           <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
             <View style={[styles.modalHandle, { backgroundColor: activeFilterColor }]} />
             <Text style={styles.modalTitle}>Filter by Status</Text>
-            {FILTER_OPTIONS.map((opt) => {
+            {(filterModal === 'ended' ? ENDED_FILTER_OPTIONS : FILTER_OPTIONS).map((opt) => {
               const isActive = activeFilterKey ? filters[activeFilterKey] === opt : false;
               return (
                 <TouchableOpacity
