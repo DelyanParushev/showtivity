@@ -51,6 +51,22 @@ jobs:
           curl -L "$APK_URL" -o Showtivity-${{ github.ref_name }}.apk
           ls -lh Showtivity-${{ github.ref_name }}.apk
 
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            CHANGES=$(git log "$PREV_TAG..HEAD" --pretty=format:"- %s" --no-merges | grep -v "^- Merge" | head -20)
+          else
+            CHANGES=$(git log --pretty=format:"- %s" --no-merges | head -20)
+          fi
+          if [ -z "$CHANGES" ]; then
+            CHANGES="- Bug fixes and improvements"
+          fi
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -59,13 +75,13 @@ jobs:
           body: |
             ## Showtivity ${{ github.ref_name }}
 
+            ### What's new
+            ${{ env.CHANGELOG }}
+
             ### Install
-            1. Download `showtivity.apk` below
+            1. Download the `.apk` file below
             2. Open it on your Android phone
             3. Allow "Install from unknown sources" if prompted
             4. Install
-
-            ### What's new
-            See commits since last release.
           draft: false
           prerelease: false

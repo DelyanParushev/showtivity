@@ -90,12 +90,9 @@ export default function HomeScreen() {
     );
   }
 
-  const finished = watching.filter(
-    (s) =>
-      (s.show.status === 'ended' || s.show.status === 'canceled') &&
-      (s.progress?.aired ?? 0) > 0 &&
-      (s.progress?.completed ?? 0) >= (s.progress?.aired ?? 1)
-  ).length;
+  // Fully-watched + ended/canceled shows are moved from `watching` → `ended`
+  // by useCategorizedShows, retaining category === 'watching'. Count those.
+  const finished = ended.filter((s) => s.category === 'watching').length;
 
   const totalShows = watching.length + watchlist.length + ended.length;
 

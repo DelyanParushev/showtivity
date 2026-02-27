@@ -79,9 +79,11 @@ function UpdateModal() {
             const res = await fetch('https://api.github.com/repos/DelyanParushev/showtivity/releases/latest');
             const json = await res.json();
             const body: string = json.body ?? '';
-            // Parse bullet lines as changelog items
+            // Only keep real bullet-point lines; skip headers (##), blank lines,
+            // and the Install instructions block.
             const items = body
               .split('\n')
+              .filter((l: string) => /^[-*]\s+/.test(l.trim()))
               .map((l: string) => l.replace(/^[-*]\s*/, '').trim())
               .filter((l: string) => l.length > 0)
               .slice(0, 8);
