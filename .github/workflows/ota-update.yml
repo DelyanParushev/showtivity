@@ -50,4 +50,4 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           MESSAGE="${{ github.event.inputs.message || github.event.head_commit.message }}"
-          eas update --channel preview --message "$MESSAGE" --non-interactive
+          eas update --channel preview --message "$MESSAGE" --non-interactive --environment preview
