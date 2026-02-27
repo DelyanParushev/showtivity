@@ -171,12 +171,14 @@ export default function ProfileScreen() {
               onPress={handleSync}
               color={Colors.status.watching}
             />
-            <MenuItem
-              icon="cloud-download-outline"
-              label="Check for Updates"
-              onPress={handleCheckForUpdates}
-              color={Colors.status.running}
-            />
+            {Platform.OS !== 'web' && (
+              <MenuItem
+                icon="cloud-download-outline"
+                label="Check for Updates"
+                onPress={handleCheckForUpdates}
+                color={Colors.status.running}
+              />
+            )}
             <MenuItem
               icon="open-outline"
               label="Open Trakt Profile"
