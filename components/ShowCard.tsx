@@ -141,8 +141,8 @@ export function ShowCard({
             </View>
           ) : category === 'ended' && isFullyWatched ? (
             <View style={[styles.tag, styles.tagSmall, { backgroundColor: 'rgba(16,185,129,0.2)', flexDirection: 'row', alignItems: 'center', gap: 3 }]}>
-              <Ionicons name="eye" size={10} color="#10b981" />
-              <Text style={[styles.tagText, styles.tagTextSmall, { color: '#10b981' }]}>Watched</Text>
+              <Ionicons name="checkmark-circle" size={10} color="#10b981" />
+              <Text style={[styles.tagText, styles.tagTextSmall, { color: '#10b981' }]}>Finished</Text>
             </View>
           ) : (
             <StatusTag category={category} small />

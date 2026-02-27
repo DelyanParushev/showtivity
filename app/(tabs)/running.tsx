@@ -77,13 +77,6 @@ export default function RunningScreen() {
         {/* ─── SECTION 1: AIRING ─── */}
         {running.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionDot, { backgroundColor: Colors.status.running }]} />
-              <Text style={[styles.sectionTitle, { color: Colors.status.running }]}>Airing</Text>
-              <View style={[styles.sectionLine, { backgroundColor: Colors.status.running + '33' }]} />
-              <Text style={[styles.sectionCount, { color: Colors.status.running }]}>{running.length}</Text>
-            </View>
-
             {thisWeek.length > 0 && (
               <View style={styles.subSection}>
                 <View style={styles.subSectionHeader}>

@@ -84,8 +84,8 @@ export function RunningShowCard({ item, onPress }: RunningShowCardProps) {
       </View>
 
       {/* Countdown circle */}
-      <View style={[styles.countdownCircle, { borderColor: color + '66' }]}>
-        <Text style={[styles.countdownDays, { color }]}>
+      <View style={[styles.countdownCircle, { backgroundColor: color }]}>
+        <Text style={styles.countdownDays}>
           {days !== null && days >= 0 ? days : '—'}
         </Text>
         <Text style={styles.countdownDaysLabel}>
@@ -221,17 +221,17 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   countdownDays: {
+    color: '#fff',
     fontSize: Typography.lg,
     fontWeight: '700',
     lineHeight: 20,
   },
   countdownDaysLabel: {
-    color: Colors.text.muted,
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 9,
   },
 });
