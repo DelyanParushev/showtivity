@@ -105,9 +105,11 @@ export default function PersonScreen() {
     person.place_of_birth ? { label: 'Birthplace', value: person.place_of_birth } : null,
   ].filter(Boolean) as { label: string; value: string }[];
 
-  const bioLines = person.biography ? person.biography.split('\n\n') : [];
-  const bioPreview = bioLines.slice(0, 2).join('\n\n');
-  const hasBioMore = bioLines.length > 2 || person.biography.length > 600;
+  const bioSentences = person.biography
+    ? person.biography.match(/[^.!?]+[.!?]+/g) ?? [person.biography]
+    : [];
+  const bioPreview = bioSentences.slice(0, 3).join(' ').trim();
+  const hasBioMore = bioSentences.length > 3;
   const bioText = bioExpanded || !hasBioMore ? person.biography : bioPreview;
 
   return (
@@ -127,12 +129,6 @@ export default function PersonScreen() {
           )}
           <View style={styles.heroInfo}>
             <Text style={styles.personName}>{person.name}</Text>
-            {person.known_for_department ? (
-              <View style={styles.deptBadge}>
-                <Ionicons name="film-outline" size={12} color={Colors.accent.primary} />
-                <Text style={styles.deptText}>{person.known_for_department}</Text>
-              </View>
-            ) : null}
             {age !== null && (
               <Text style={styles.ageLine}>
                 {person.deathday
@@ -370,14 +366,14 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xs,
   },
   creditCard: {
-    width: 100,
+    width: 110,
     alignItems: 'center',
     gap: 5,
   },
   creditPoster: {
-    width: 90,
-    height: 134,
-    borderRadius: Radius.sm,
+    width: 110,
+    height: 165,
+    borderRadius: Radius.md,
     backgroundColor: Colors.bg.elevated,
     overflow: 'hidden',
   },
