@@ -26,13 +26,12 @@ export default function RunningScreen() {
 
   // Only show episodes airing today or in the future — past dates mean the user
   // just has unwatched episodes to catch up on (those stay in Currently Watching)
-  const airingToday = running.filter((s) => s.daysUntilNext === 0);
-  const airingThisWeek = running.filter(
-    (s) => s.daysUntilNext !== null && s.daysUntilNext > 0 && s.daysUntilNext <= 7
+  const thisWeek = running.filter(
+    (s) => s.daysUntilNext !== null && s.daysUntilNext >= 0 && s.daysUntilNext < 7
   );
-  const airingLater = running.filter((s) => s.daysUntilNext !== null && s.daysUntilNext > 7);
+  const airingSoon = running.filter((s) => s.daysUntilNext !== null && s.daysUntilNext >= 7);
 
-  const totalCount = running.filter((s) => s.daysUntilNext !== null && s.daysUntilNext >= 0).length + awaitingRelease.length;
+  const totalCount = (thisWeek.length + airingSoon.length) + awaitingRelease.length;
 
   if (isLoading) {
     return (
@@ -71,7 +70,7 @@ export default function RunningScreen() {
         <View style={styles.pageHeader}>
           <Text style={styles.headerTitle}>Airing Schedule</Text>
           <Text style={styles.headerSub}>
-            {running.length} airing · {awaitingRelease.length} awaiting release
+            {thisWeek.length + airingSoon.length} airing · {awaitingRelease.length} awaiting release
           </Text>
         </View>
 
@@ -85,38 +84,30 @@ export default function RunningScreen() {
               <Text style={[styles.sectionCount, { color: Colors.status.running }]}>{running.length}</Text>
             </View>
 
-            {airingToday.length > 0 && (
+            {thisWeek.length > 0 && (
               <View style={styles.subSection}>
                 <View style={styles.subSectionHeader}>
                   <View style={[styles.subDot, { backgroundColor: Colors.status.running }]} />
-                  <Text style={[styles.subSectionLabel, { color: Colors.status.running }]}>New Episodes</Text>
-                  <Text style={[styles.subSectionCount, { color: Colors.status.running }]}>{airingToday.length}</Text>
+                  <Text style={[styles.subSectionLabel, { color: Colors.status.running }]}>This Week</Text>
+                  <Text style={[styles.subSectionCount, { color: Colors.status.running }]}>{thisWeek.length}</Text>
                 </View>
-                {airingToday.map((item) => (
+                {thisWeek.map((item) => (
                   <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} />
                 ))}
               </View>
             )}
 
-            {airingThisWeek.length > 0 && (
+            {airingSoon.length > 0 && (
               <View style={styles.subSection}>
                 <View style={styles.subSectionHeader}>
                   <View style={[styles.subDot, { backgroundColor: Colors.status.watching }]} />
-                  <Text style={[styles.subSectionLabel, { color: Colors.status.watching }]}>This Week</Text>
-                  <Text style={[styles.subSectionCount, { color: Colors.status.watching }]}>{airingThisWeek.length}</Text>
+                  <Text style={[styles.subSectionLabel, { color: Colors.status.watching }]}>Airing Soon</Text>
+                  <Text style={[styles.subSectionCount, { color: Colors.status.watching }]}>{airingSoon.length}</Text>
                 </View>
-                {airingThisWeek.map((item) => (
+                {airingSoon.map((item) => (
                   <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} />
                 ))}
               </View>
-            )}
-
-            {airingLater.length > 0 && (
-              <>
-                {airingLater.map((item) => (
-                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} />
-                ))}
-              </>
             )}
           </View>
         )}

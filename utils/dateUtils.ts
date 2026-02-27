@@ -82,7 +82,17 @@ export function showStatusLabel(
 ): string {
   // Only show a countdown for confirmed future/today episodes
   if (nextEpisodeDate && daysUntilNext !== null && daysUntilNext >= 0) {
-    if (daysUntilNext === 0) return 'Airing today';
+    if (daysUntilNext === 0) {
+      // Less than 24 hours — count down in hours
+      try {
+        const hours = differenceInHours(parseISO(nextEpisodeDate), new Date());
+        if (hours <= 0) return 'Airing now';
+        if (hours === 1) return 'In 1h';
+        return `In ${hours}h`;
+      } catch {
+        return 'Airing today';
+      }
+    }
     const d = daysUntilNext;
     if (d === 1) return 'Tomorrow';
     if (d < 7) return `In ${d} days`;
