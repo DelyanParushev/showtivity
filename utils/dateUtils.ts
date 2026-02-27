@@ -80,6 +80,10 @@ export function showStatusLabel(
   nextEpisodeDate: string | null | undefined,
   daysUntilNext: number | null
 ): string {
+  // Episode airing today
+  if (nextEpisodeDate && daysUntilNext === 0) return 'Airing today';
+  // Episode already aired — new content available to watch
+  if (nextEpisodeDate && daysUntilNext !== null && daysUntilNext < 0) return 'New episode available';
   // Future air date is known
   if (nextEpisodeDate && daysUntilNext !== null && daysUntilNext > 0) {
     const d = daysUntilNext;
@@ -90,7 +94,6 @@ export function showStatusLabel(
     if (d < 365) return `Returning in ${Math.round(d / 30)} months`;
     return `Returning in ${Math.round(d / 365)} years`;
   }
-  // Episode airing today or already aired — fall through to status label below
   // No air date — derive from show status
   const s = (status ?? '').toLowerCase();
   if (s === 'ended') return 'Ended';

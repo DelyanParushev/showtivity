@@ -142,6 +142,15 @@ export function useAllShows() {
               if (nextEpisode?.first_aired) {
                 daysUntilNext = daysUntil(nextEpisode.first_aired);
               }
+              // Guard: if the user is fully caught up but the resolved next-episode
+              // date is in the past, Trakt returned a stale placeholder. Treat as
+              // no confirmed date → show moves to "Awaiting Release" not "Today".
+              const isCaughtUp =
+                progress.aired > 0 && progress.completed >= progress.aired;
+              if (isCaughtUp && daysUntilNext !== null && daysUntilNext < 0) {
+                daysUntilNext = null;
+                nextEpisode = null;
+              }
             } else if (status === 'returning series' || status === 'continuing') {
               nextEpisode = await getNextEpisode(slug, token);
               if (nextEpisode?.first_aired) {

@@ -91,7 +91,7 @@ export default function RunningScreen() {
               <View style={styles.subSection}>
                 <View style={styles.subSectionHeader}>
                   <View style={[styles.subDot, { backgroundColor: Colors.status.running }]} />
-                  <Text style={[styles.subSectionLabel, { color: Colors.status.running }]}>Today</Text>
+                  <Text style={[styles.subSectionLabel, { color: Colors.status.running }]}>New Episodes</Text>
                   <Text style={[styles.subSectionCount, { color: Colors.status.running }]}>{airingToday.length}</Text>
                 </View>
                 {airingToday.map((item) => (
