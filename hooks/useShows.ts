@@ -326,16 +326,24 @@ export function useCategorizedShows() {
   const RUNNING_STATUSES = ['returning series', 'continuing'];
   const ENDED_STATUSES = ['ended', 'canceled'];
 
-  const watching = shows.filter((s) => {
-    if (s.category !== 'watching') return false;
-    // Caught up + returning series + NO confirmed future date → Airing page only
-    // (nothing to watch now AND no countdown to show)
-    if (RUNNING_STATUSES.includes(s.show.status) && s.daysUntilNext === null) return false;
-    // Fully watched + ended/canceled → move to ended section, not continue watching
-    const isFullyWatched = s.progress && s.progress.aired > 0 && s.progress.completed >= s.progress.aired;
-    if (ENDED_STATUSES.includes(s.show.status) && isFullyWatched) return false;
-    return true;
-  });
+  const watching = shows
+    .filter((s) => {
+      if (s.category !== 'watching') return false;
+      // Fully watched + ended/canceled → move to ended section
+      const isFullyWatched =
+        s.progress && s.progress.aired > 0 && s.progress.completed >= s.progress.aired;
+      if (ENDED_STATUSES.includes(s.show.status) && isFullyWatched) return false;
+      // Caught up (no unwatched aired episodes) → nothing left to watch right now,
+      // show belongs on the Airing page only (with or without a known return date)
+      if (isFullyWatched) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      // Most-recently watched first
+      const aTime = a.lastWatchedAt ? new Date(a.lastWatchedAt).getTime() : 0;
+      const bTime = b.lastWatchedAt ? new Date(b.lastWatchedAt).getTime() : 0;
+      return bTime - aTime;
+    });
   const watchlist = shows.filter((s) => s.category === 'watchlist');
   const running = shows
     .filter(
