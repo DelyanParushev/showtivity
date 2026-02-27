@@ -75,7 +75,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (Platform.OS === 'web') {
       window.location.href = authUrl;
     } else {
-      await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      // openAuthSessionAsync returns the full redirect URL directly
+      // (showtivity://auth/callback?code=...) — extract code and handle inline.
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      if (result.type === 'success' && result.url) {
+        const Linking = await import('expo-linking');
+        const parsed = Linking.parse(result.url);
+        const code = parsed.queryParams?.code as string | undefined;
+        if (code) {
+          await get().handleCallback(code);
+        }
+      }
     }
   },
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useAuthStore } from '../../store/authStore';
 import { Colors } from '../../constants/theme';
 
@@ -9,29 +10,28 @@ export default function AuthCallbackScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // On web, Trakt redirects to http://localhost:8081/auth/callback?code=...
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const error = params.get('error');
-
-    if (error) {
-      console.error('OAuth error:', error);
-      router.replace('/(auth)/login');
-      return;
-    }
-
-    if (code) {
+    if (Platform.OS === 'web') {
+      // Web: code arrives as a query param on window.location
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const error = params.get('error');
+      if (error || !code) { router.replace('/(auth)/login'); return; }
       handleCallback(code)
-        .then(() => {
-          router.replace('/(tabs)');
-        })
-        .catch((err) => {
-          console.error('Auth callback failed:', err);
-          router.replace('/(auth)/login');
-        });
+        .then(() => router.replace('/(tabs)'))
+        .catch(() => router.replace('/(auth)/login'));
     } else {
-      // No code — redirect back to login
-      router.replace('/(auth)/login');
+      // Native: on Android the WebBrowser result is handled directly in
+      // authStore.login() — if we land here it means the deep link opened
+      // the app fresh. Parse the code from the initial URL.
+      Linking.getInitialURL().then((url) => {
+        if (!url) { router.replace('/(auth)/login'); return; }
+        const parsed = Linking.parse(url);
+        const code = parsed.queryParams?.code as string | undefined;
+        if (!code) { router.replace('/(auth)/login'); return; }
+        handleCallback(code)
+          .then(() => router.replace('/(tabs)'))
+          .catch(() => router.replace('/(auth)/login'));
+      });
     }
   }, []);
 
