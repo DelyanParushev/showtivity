@@ -380,15 +380,15 @@ export function useCategorizedShows() {
     });
   const watchlist = shows.filter((s) => s.category === 'watchlist');
   const running = shows
-    .filter(
-      (s) =>
-        s.category === 'running' ||
-        (s.category === 'watchlist' && RUNNING_STATUSES.includes(s.show.status)) ||
-        // All watching shows with a returning/continuing status appear on the
-        // Airing page. daysUntilNext is now always the future premiere date
-        // (not a past unwatched episode), so the countdown is correct.
-        (s.category === 'watching' && RUNNING_STATUSES.includes(s.show.status))
-    )
+    .filter((s) => {
+      if (s.category === 'running') return true;
+      if (s.category === 'watchlist' && RUNNING_STATUSES.includes(s.show.status)) return true;
+      // Any actively-watched show with a confirmed future date belongs on the
+      // Airing page — regardless of Trakt status string (could be 'in production',
+      // 'planned', etc.) as long as daysUntilNext is today or in the future.
+      if (s.category === 'watching' && s.daysUntilNext !== null && s.daysUntilNext >= 0) return true;
+      return false;
+    })
     .sort((a, b) => (a.daysUntilNext ?? 9999) - (b.daysUntilNext ?? 9999));
   const waiting = shows.filter(
     (s) =>
