@@ -103,9 +103,6 @@ export default function PersonScreen() {
       : null,
     person.deathday ? { label: 'Died', value: formatBirthday(person.deathday) } : null,
     person.place_of_birth ? { label: 'Birthplace', value: person.place_of_birth } : null,
-    person.known_for_department
-      ? { label: 'Known for', value: person.known_for_department }
-      : null,
   ].filter(Boolean) as { label: string; value: string }[];
 
   const bioLines = person.biography ? person.biography.split('\n\n') : [];
@@ -195,26 +192,30 @@ export default function PersonScreen() {
             {creditsLoading ? (
               <ActivityIndicator color={Colors.accent.primary} style={{ marginTop: 12 }} />
             ) : (
-              credits.map((credit) => (
-                <View key={`${credit.id}-${credit.character}`} style={styles.creditCard}>
-                  {credit.posterUrl ? (
-                    <Image
-                      source={{ uri: credit.posterUrl }}
-                      style={styles.creditPoster}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={[styles.creditPoster, styles.creditPosterFallback]}>
-                      <Ionicons name="tv-outline" size={18} color={Colors.text.muted} />
-                    </View>
-                  )}
-                  <View style={styles.creditInfo}>
-                    <Text style={styles.creditTitle} numberOfLines={1}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.creditsList}
+              >
+                {credits.map((credit) => (
+                  <View key={`${credit.id}-${credit.character}`} style={styles.creditCard}>
+                    {credit.posterUrl ? (
+                      <Image
+                        source={{ uri: credit.posterUrl }}
+                        style={styles.creditPoster}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.creditPoster, styles.creditPosterFallback]}>
+                        <Ionicons name="tv-outline" size={22} color={Colors.text.muted} />
+                      </View>
+                    )}
+                    <Text style={styles.creditTitle} numberOfLines={2}>
                       {credit.name}
                     </Text>
                     {credit.character ? (
                       <Text style={styles.creditCharacter} numberOfLines={1}>
-                        as {credit.character}
+                        {credit.character}
                       </Text>
                     ) : null}
                     <View style={styles.creditMeta}>
@@ -224,27 +225,14 @@ export default function PersonScreen() {
                         </Text>
                       ) : null}
                       {credit.episode_count > 0 ? (
-                        <>
-                          {credit.first_air_date ? (
-                            <Text style={styles.creditMetaDot}>·</Text>
-                          ) : null}
-                          <Text style={styles.creditMetaText}>
-                            {credit.episode_count} ep{credit.episode_count !== 1 ? 's' : ''}
-                          </Text>
-                        </>
-                      ) : null}
-                      {credit.vote_average > 0 ? (
-                        <>
-                          <Text style={styles.creditMetaDot}>·</Text>
-                          <Text style={styles.creditMetaText}>
-                            ⭐ {credit.vote_average.toFixed(1)}
-                          </Text>
-                        </>
+                        <Text style={styles.creditMetaText}>
+                          {credit.first_air_date ? ' · ' : ''}{credit.episode_count} ep{credit.episode_count !== 1 ? 's' : ''}
+                        </Text>
                       ) : null}
                     </View>
                   </View>
-                </View>
-              ))
+                ))}
+              </ScrollView>
             )}
           </View>
         )}
@@ -377,18 +365,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   // Credits
-  creditCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: Radius.md,
-    padding: Spacing.sm,
-    marginBottom: Spacing.sm,
+  creditsList: {
     gap: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  creditCard: {
+    width: 100,
+    alignItems: 'center',
+    gap: 5,
   },
   creditPoster: {
-    width: 46,
-    height: 68,
+    width: 90,
+    height: 134,
     borderRadius: Radius.sm,
     backgroundColor: Colors.bg.elevated,
     overflow: 'hidden',
@@ -403,25 +391,27 @@ const styles = StyleSheet.create({
   },
   creditTitle: {
     color: Colors.text.primary,
-    fontSize: Typography.base,
+    fontSize: 11,
     fontWeight: '600',
+    textAlign: 'center',
   },
   creditCharacter: {
     color: Colors.text.secondary,
-    fontSize: Typography.sm,
+    fontSize: 10,
+    textAlign: 'center',
   },
   creditMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
     flexWrap: 'wrap',
   },
   creditMetaText: {
     color: Colors.text.muted,
-    fontSize: Typography.xs,
+    fontSize: 10,
   },
   creditMetaDot: {
     color: Colors.text.muted,
-    fontSize: Typography.xs,
+    fontSize: 10,
   },
 });

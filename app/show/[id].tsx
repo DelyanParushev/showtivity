@@ -362,7 +362,20 @@ export default function ShowDetailScreen() {
               ))}
             </ScrollView>
           </View>
-        )}}
+        )}
+
+        {/* Seasons & Episodes */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Seasons & Episodes</Text>
+          <SeasonsSection
+            showSlug={show.ids.slug}
+            showTraktId={show.ids.trakt}
+            showTmdbId={show.ids.tmdb}
+            isInMyShows={isInList}
+          />
+        </View>
+
+        {/* Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Details</Text>
           <View style={styles.detailsGrid}>
@@ -401,17 +414,6 @@ export default function ShowDetailScreen() {
             </View>
           </View>
         )}
-
-        {/* Seasons & Episodes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Seasons & Episodes</Text>
-          <SeasonsSection
-            showSlug={show.ids.slug}
-            showTraktId={show.ids.trakt}
-            showTmdbId={show.ids.tmdb}
-            isInMyShows={isInList}
-          />
-        </View>
 
         {/* External Links */}
         <View style={styles.section}>
