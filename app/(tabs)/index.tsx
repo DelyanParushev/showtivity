@@ -20,21 +20,27 @@ import { Colors, Spacing, Typography, CategoryConfig, Radius } from '../../const
 import { useAuthStore } from '../../store/authStore';
 import type { EnrichedShow } from '../../types/trakt';
 
-type SectionKey = 'watching' | 'watchlist' | 'ended';
+type SectionKey = 'watching' | 'watchlist' | 'ended' | 'finished';
 type FilterValue = 'All' | 'Ended' | 'Returning Series' | 'Canceled' | 'Finished';
 
 const FILTER_OPTIONS: FilterValue[] = ['All', 'Ended', 'Returning Series', 'Canceled'];
 const ENDED_FILTER_OPTIONS: FilterValue[] = ['All', 'Ended', 'Returning Series', 'Canceled', 'Finished'];
+const FINISHED_FILTER_OPTIONS: FilterValue[] = ['All', 'Ended', 'Canceled'];
+
+function getFilterOptions(key: SectionKey | null): FilterValue[] {
+  if (key === 'ended') return ENDED_FILTER_OPTIONS;
+  if (key === 'finished') return FINISHED_FILTER_OPTIONS;
+  return FILTER_OPTIONS;
+}
 
 function filterShows(shows: EnrichedShow[], filter: FilterValue): EnrichedShow[] {
   if (filter === 'All') return shows;
-  if (filter === 'Ended') return shows.filter((s) => s.show.status === 'ended' && s.category !== 'watching');
+  if (filter === 'Ended') return shows.filter((s) => s.show.status === 'ended');
   if (filter === 'Returning Series')
     return shows.filter(
       (s) => s.show.status === 'returning series' || s.show.status === 'continuing'
     );
-  if (filter === 'Canceled') return shows.filter((s) => s.show.status === 'canceled' && s.category !== 'watching');
-  // Finished = fully-watched ended/canceled shows (category stays 'watching' until fully done)
+  if (filter === 'Canceled') return shows.filter((s) => s.show.status === 'canceled');
   if (filter === 'Finished') return shows.filter((s) => s.category === 'watching');
   return shows;
 }
@@ -48,6 +54,7 @@ export default function HomeScreen() {
     watching: 'All',
     watchlist: 'All',
     ended: 'All',
+    finished: 'All',
   });
 
   const [filterModal, setFilterModal] = useState<SectionKey | null>(null);
@@ -118,20 +125,12 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>
-              Hi, {user?.name || user?.username || 'there'} 👋
-            </Text>
-            <Text style={styles.subtitle}>
-              {totalShows} show{totalShows !== 1 ? 's' : ''} tracked
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.searchBtn}
-            onPress={() => router.push('/(tabs)/search')}
-          >
-            <Ionicons name="search" size={20} color={Colors.text.primary} />
-          </TouchableOpacity>
+          <Text style={styles.greeting}>
+            Hi, {user?.name || user?.username || 'there'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {totalShows} show{totalShows !== 1 ? 's' : ''} tracked
+          </Text>
         </View>
 
         {/* Quick Stats */}
@@ -182,6 +181,23 @@ export default function HomeScreen() {
           emptyMessage="No ended shows"
           emptySubMessage="Concluded series will appear here"
         />
+
+        {/* Finished */}
+        {finished > 0 && (
+          <Section
+            sectionKey="finished"
+            shows={filterShows(
+              ended.filter((s) => s.category === 'watching'),
+              filters.finished
+            )}
+            totalCount={finished}
+            filter={filters.finished}
+            onOpenFilter={() => setFilterModal('finished')}
+            onPressShow={navigateTo}
+            emptyMessage="No finished shows"
+            emptySubMessage="Shows you've watched to the end will appear here"
+          />
+        )}
       </ScrollView>
 
       {/* Filter Modal */}
@@ -195,7 +211,7 @@ export default function HomeScreen() {
           <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
             <View style={[styles.modalHandle, { backgroundColor: activeFilterColor }]} />
             <Text style={styles.modalTitle}>Filter by Status</Text>
-            {(filterModal === 'ended' ? ENDED_FILTER_OPTIONS : FILTER_OPTIONS).map((opt) => {
+            {getFilterOptions(filterModal).map((opt) => {
               const isActive = activeFilterKey ? filters[activeFilterKey] === opt : false;
               return (
                 <TouchableOpacity
@@ -327,9 +343,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.md,
@@ -343,14 +356,6 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: Typography.sm,
     marginTop: 2,
-  },
-  searchBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.bg.elevated,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   statsRow: {
     marginBottom: Spacing.lg,

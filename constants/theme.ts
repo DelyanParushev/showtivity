@@ -86,4 +86,10 @@ export const CategoryConfig = {
     icon: 'archive',
     description: 'Shows that have concluded',
   },
+  finished: {
+    label: 'Finished',
+    color: '#10b981',
+    icon: 'checkmark-circle',
+    description: 'Shows you have fully watched',
+  },
 } as const;
