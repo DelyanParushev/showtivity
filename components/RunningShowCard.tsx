@@ -18,9 +18,10 @@ import { TMDB_CONFIG } from '../config/trakt';
 interface RunningShowCardProps {
   item: EnrichedShow;
   onPress: () => void;
+  hideBadge?: boolean;
 }
 
-export function RunningShowCard({ item, onPress }: RunningShowCardProps) {
+export function RunningShowCard({ item, onPress, hideBadge = false }: RunningShowCardProps) {
   const { show, nextEpisode, daysUntilNext, progress } = item;
   const days = daysUntilNext ?? null;
   const color = showStatusColor(show.status, days);
@@ -56,10 +57,12 @@ export function RunningShowCard({ item, onPress }: RunningShowCardProps) {
 
         {/* Status + next episode */}
         <View style={styles.episodeRow}>
-          <View style={[styles.countdownBadge, { backgroundColor: color + '22' }]}>
-            <Ionicons name="time-outline" size={12} color={color} />
-            <Text style={[styles.countdownText, { color }]}>{label}</Text>
-          </View>
+          {!hideBadge && (
+            <View style={[styles.countdownBadge, { backgroundColor: color + '22' }]}>
+              <Ionicons name="time-outline" size={12} color={color} />
+              <Text style={[styles.countdownText, { color }]}>{label}</Text>
+            </View>
+          )}
           {nextEpisode ? (
             <Text style={styles.episodeLabel}>
               S{String(nextEpisode.season).padStart(2, '0')}E

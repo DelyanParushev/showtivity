@@ -5,18 +5,33 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
+  Image,
+  TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCategorizedShows } from '../../hooks/useShows';
 import { RunningShowCard } from '../../components/RunningShowCard';
 import { EmptyState, LoadingSpinner } from '../../components/UI';
-import { Colors, Spacing, Typography } from '../../constants/theme';
+import { Colors, Radius, Spacing, Typography } from '../../constants/theme';
+import { getTmdbPoster } from '../../services/traktApi';
+import { TMDB_CONFIG } from '../../config/trakt';
 import type { EnrichedShow } from '../../types/trakt';
+
+const GRID_COLS = 3;
+const GRID_GAP = 8;
 
 export default function RunningScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { running, awaitingRelease, isLoading, refetch } = useCategorizedShows();
+
+  const contentWidth = width - Spacing.lg * 2;
+  const posterWidth = (contentWidth - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
+  const posterHeight = posterWidth * 1.5;
 
   const navigateTo = (show: EnrichedShow) =>
     router.push({
@@ -85,7 +100,7 @@ export default function RunningScreen() {
                   <Text style={[styles.subSectionCount, { color: Colors.status.running }]}>{thisWeek.length}</Text>
                 </View>
                 {thisWeek.map((item) => (
-                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} />
+                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} hideBadge />
                 ))}
               </View>
             )}
@@ -98,7 +113,7 @@ export default function RunningScreen() {
                   <Text style={[styles.subSectionCount, { color: Colors.status.watching }]}>{airingSoon.length}</Text>
                 </View>
                 {airingSoon.map((item) => (
-                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} />
+                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} hideBadge />
                 ))}
               </View>
             )}
@@ -114,9 +129,17 @@ export default function RunningScreen() {
               <View style={[styles.sectionLine, { backgroundColor: Colors.status.waiting + '33' }]} />
               <Text style={[styles.sectionCount, { color: Colors.status.waiting }]}>{awaitingRelease.length}</Text>
             </View>
-            {awaitingRelease.map((item) => (
-              <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} />
-            ))}
+            <View style={styles.posterGrid}>
+              {awaitingRelease.map((item) => (
+                <AwaitingPosterCard
+                  key={item.show.ids.trakt}
+                  item={item}
+                  onPress={() => navigateTo(item)}
+                  posterWidth={posterWidth}
+                  posterHeight={posterHeight}
+                />
+              ))}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -209,4 +232,61 @@ const styles = StyleSheet.create({
     fontSize: Typography.xs,
     fontWeight: '700',
   },
+  posterGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: GRID_GAP,
+  },
 });
+
+function AwaitingPosterCard({
+  item,
+  onPress,
+  posterWidth,
+  posterHeight,
+}: {
+  item: EnrichedShow;
+  onPress: () => void;
+  posterWidth: number;
+  posterHeight: number;
+}) {
+  const { show } = item;
+  const [failed, setFailed] = React.useState(false);
+
+  const { data: images } = useQuery({
+    queryKey: ['tmdbPoster', show.ids.tmdb],
+    queryFn: () => getTmdbPoster(show.ids.tmdb, TMDB_CONFIG.API_KEY),
+    enabled: !!show.ids.tmdb && !!TMDB_CONFIG.API_KEY,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+  });
+
+  const posterUrl = images?.poster ?? null;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={{
+        width: posterWidth,
+        height: posterHeight,
+        borderRadius: Radius.sm,
+        backgroundColor: Colors.bg.elevated,
+        overflow: 'hidden',
+      }}
+    >
+      {posterUrl && !failed ? (
+        <Image
+          source={{ uri: posterUrl }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="tv-outline" size={24} color={Colors.text.muted} />
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
