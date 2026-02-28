@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useCategorizedShows } from '../../hooks/useShows';
 import { RunningShowCard } from '../../components/RunningShowCard';
 import { EmptyState, LoadingSpinner } from '../../components/UI';
-import { Colors, Radius, Spacing, Typography } from '../../constants/theme';
+import { CategoryConfig, Colors, Radius, Spacing, Typography } from '../../constants/theme';
 import { getTmdbPoster } from '../../services/traktApi';
 import { TMDB_CONFIG } from '../../config/trakt';
 import type { EnrichedShow } from '../../types/trakt';
@@ -100,7 +100,7 @@ export default function RunningScreen() {
                   <Text style={[styles.subSectionCount, { color: Colors.status.running }]}>{thisWeek.length}</Text>
                 </View>
                 {thisWeek.map((item) => (
-                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} hideBadge />
+                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} hideBadge showCategoryIcon />
                 ))}
               </View>
             )}
@@ -113,7 +113,7 @@ export default function RunningScreen() {
                   <Text style={[styles.subSectionCount, { color: Colors.status.watching }]}>{airingSoon.length}</Text>
                 </View>
                 {airingSoon.map((item) => (
-                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} hideBadge />
+                  <RunningShowCard key={item.show.ids.trakt} item={item} onPress={() => navigateTo(item)} hideBadge showCategoryIcon />
                 ))}
               </View>
             )}
@@ -287,6 +287,30 @@ function AwaitingPosterCard({
           <Ionicons name="tv-outline" size={24} color={Colors.text.muted} />
         </View>
       )}
+      {(() => {
+        const cfg = CategoryConfig[item.category as keyof typeof CategoryConfig];
+        if (!cfg) return null;
+        return (
+          <View style={{
+            position: 'absolute',
+            bottom: 5,
+            right: 5,
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            backgroundColor: cfg.color,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.4,
+            shadowRadius: 2,
+            elevation: 3,
+          }}>
+            <Ionicons name={cfg.icon as any} size={12} color="#fff" />
+          </View>
+        );
+      })()}
     </TouchableOpacity>
   );
 }

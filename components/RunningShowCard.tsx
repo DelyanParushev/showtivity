@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing, Typography } from '../constants/theme';
+import { CategoryConfig, Colors, Radius, Spacing, Typography } from '../constants/theme';
 import { differenceInHours, parseISO } from 'date-fns';
 import { showStatusLabel, showStatusColor, formatAirDate } from '../utils/dateUtils';
 import { getTmdbPoster } from '../services/traktApi';
@@ -19,9 +19,10 @@ interface RunningShowCardProps {
   item: EnrichedShow;
   onPress: () => void;
   hideBadge?: boolean;
+  showCategoryIcon?: boolean;
 }
 
-export function RunningShowCard({ item, onPress, hideBadge = false }: RunningShowCardProps) {
+export function RunningShowCard({ item, onPress, hideBadge = false, showCategoryIcon = false }: RunningShowCardProps) {
   const { show, nextEpisode, daysUntilNext, progress } = item;
   const days = daysUntilNext ?? null;
   const color = showStatusColor(show.status, days);
@@ -44,6 +45,15 @@ export function RunningShowCard({ item, onPress, hideBadge = false }: RunningSho
       {/* Poster thumbnail */}
       <View style={styles.posterContainer}>
         <RunningPoster tmdbId={show.ids.tmdb} title={show.title} />
+        {showCategoryIcon && (() => {
+          const cfg = CategoryConfig[item.category as keyof typeof CategoryConfig];
+          if (!cfg) return null;
+          return (
+            <View style={[styles.categoryIconBadge, { backgroundColor: cfg.color }]}>
+              <Ionicons name={cfg.icon as any} size={12} color="#fff" />
+            </View>
+          );
+        })()}
       </View>
 
       {/* Main info */}
@@ -173,6 +183,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  categoryIconBadge: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+    elevation: 3,
   },
   infoContainer: {
     flex: 1,
