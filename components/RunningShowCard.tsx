@@ -49,8 +49,8 @@ export function RunningShowCard({ item, onPress, hideBadge = false, showCategory
           const cfg = CategoryConfig[item.category as keyof typeof CategoryConfig];
           if (!cfg) return null;
           return (
-            <View style={[styles.categoryIconBadge, { backgroundColor: cfg.color }]}>
-              <Ionicons name={cfg.icon as any} size={12} color="#fff" />
+            <View style={[styles.categoryIconBadge, { backgroundColor: cfg.color + '33' }]}>
+              <Ionicons name={cfg.icon as any} size={14} color={cfg.color} />
             </View>
           );
         })()}
@@ -186,18 +186,13 @@ const styles = StyleSheet.create({
   },
   categoryIconBadge: {
     position: 'absolute',
-    bottom: 5,
+    top: 5,
     right: 5,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 26,
+    height: 26,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.4,
-    shadowRadius: 2,
-    elevation: 3,
   },
   infoContainer: {
     flex: 1,

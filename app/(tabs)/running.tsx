@@ -293,21 +293,16 @@ function AwaitingPosterCard({
         return (
           <View style={{
             position: 'absolute',
-            bottom: 5,
+            top: 5,
             right: 5,
-            width: 22,
-            height: 22,
-            borderRadius: 11,
-            backgroundColor: cfg.color,
+            width: 26,
+            height: 26,
+            borderRadius: 6,
+            backgroundColor: cfg.color + '33',
             alignItems: 'center',
             justifyContent: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.4,
-            shadowRadius: 2,
-            elevation: 3,
           }}>
-            <Ionicons name={cfg.icon as any} size={12} color="#fff" />
+            <Ionicons name={cfg.icon as any} size={14} color={cfg.color} />
           </View>
         );
       })()}
