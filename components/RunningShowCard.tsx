@@ -45,15 +45,6 @@ export function RunningShowCard({ item, onPress, hideBadge = false, showCategory
       {/* Poster thumbnail */}
       <View style={styles.posterContainer}>
         <RunningPoster tmdbId={show.ids.tmdb} title={show.title} />
-        {showCategoryIcon && (() => {
-          const cfg = CategoryConfig[item.category as keyof typeof CategoryConfig];
-          if (!cfg) return null;
-          return (
-            <View style={[styles.categoryIconBadge, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-              <Ionicons name={cfg.icon as any} size={14} color={cfg.color} />
-            </View>
-          );
-        })()}
       </View>
 
       {/* Main info */}
@@ -98,6 +89,19 @@ export function RunningShowCard({ item, onPress, hideBadge = false, showCategory
             </Text>
           </View>
         )}
+
+        {/* Category pill */}
+        {showCategoryIcon && (() => {
+          const cfg = CategoryConfig[item.category as keyof typeof CategoryConfig];
+          if (!cfg) return null;
+          const pillLabel = item.category === 'watchlist' ? 'Watchlist' : 'Watching';
+          return (
+            <View style={[styles.categoryPill, { backgroundColor: cfg.color + '22' }]}>
+              <Ionicons name={cfg.icon as any} size={11} color={cfg.color} />
+              <Text style={[styles.categoryPillText, { color: cfg.color }]}>{pillLabel}</Text>
+            </View>
+          );
+        })()}
       </View>
 
       {/* Countdown circle */}
@@ -194,6 +198,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    gap: 4,
+    marginTop: 2,
+  },
+  categoryPillText: {
+    fontSize: Typography.xs,
+    fontWeight: '700',
+  },
   infoContainer: {
     flex: 1,
     gap: 5,
@@ -266,7 +284,7 @@ const styles = StyleSheet.create({
   countdownDays: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: '900',
+    fontWeight: '700',
     lineHeight: 22,
     letterSpacing: -0.5,
   },
