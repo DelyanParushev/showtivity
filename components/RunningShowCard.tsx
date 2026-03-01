@@ -49,7 +49,7 @@ export function RunningShowCard({ item, onPress, hideBadge = false, showCategory
           const cfg = CategoryConfig[item.category as keyof typeof CategoryConfig];
           if (!cfg) return null;
           return (
-            <View style={[styles.categoryIconBadge, { backgroundColor: cfg.color + '33' }]}>
+            <View style={[styles.categoryIconBadge, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
               <Ionicons name={cfg.icon as any} size={14} color={cfg.color} />
             </View>
           );

@@ -298,7 +298,7 @@ function AwaitingPosterCard({
             width: 26,
             height: 26,
             borderRadius: 6,
-            backgroundColor: cfg.color + '33',
+            backgroundColor: 'rgba(0,0,0,0.6)',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
