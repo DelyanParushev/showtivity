@@ -301,6 +301,7 @@ export function useAddToWatchlist() {
         const optimistic: EnrichedShow = {
           show,
           category: 'watchlist',
+          watchlistId: Date.now(), // temporary high value so it sorts first
           lastWatchedAt: null,
           nextEpisode: null,
           daysUntilNext: null,
@@ -325,6 +326,7 @@ export function useAddToWatchlist() {
           const entry: EnrichedShow = {
             show,
             category: 'watchlist',
+            watchlistId: Date.now(),
             lastWatchedAt: null,
             nextEpisode: null,
             daysUntilNext: null,
@@ -413,7 +415,7 @@ export function useCategorizedShows() {
     });
   const watchlist = shows
     .filter((s) => s.category === 'watchlist')
-    .sort((a, b) => (b.watchlistId ?? 0) - (a.watchlistId ?? 0));
+    .sort((a, b) => (b.watchlistId ?? Number.MAX_SAFE_INTEGER) - (a.watchlistId ?? Number.MAX_SAFE_INTEGER));
   const running = shows
     .filter((s) => {
       if (s.category === 'running') return true;
