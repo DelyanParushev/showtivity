@@ -88,14 +88,13 @@ export default function ShowDetailScreen() {
   // Fetch IMDb + Rotten Tomatoes + Metacritic via MDBList
   const imdbId = show?.ids.imdb;
   const { data: omdbRatings } = useQuery({
-    queryKey: ['mdbRatings', imdbId, 'v2'],
+    queryKey: ['mdbRatings', imdbId, 'v3'],
     queryFn: () =>
       Platform.OS === 'web'
         ? getMdbListRatingsProxy(imdbId!)
         : getMdbListRatings(imdbId!, MDBLIST_CONFIG.API_KEY),
     enabled: !!imdbId,
-    staleTime: 24 * 60 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
+    staleTime: 0,
   });
 
   // Poster size matching Awaiting Release Date grid posters
