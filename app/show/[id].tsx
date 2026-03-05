@@ -78,7 +78,7 @@ export default function ShowDetailScreen() {
 
   const { data: castMembers = [] } = useQuery({
     queryKey: ['tmdbCast', tmdbId],
-    queryFn: () => getTmdbCast(tmdbId, TMDB_CONFIG.API_KEY, 10),
+    queryFn: () => getTmdbCast(tmdbId, TMDB_CONFIG.API_KEY, 15),
     enabled: !!tmdbId && !!TMDB_CONFIG.API_KEY,
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
@@ -154,74 +154,76 @@ export default function ShowDetailScreen() {
 
           {/* Poster + title overlay */}
           <View style={styles.heroContent}>
-            <View style={styles.posterWrapper}>
-              {posterUri && !posterFailed ? (
-                <Image
-                  source={{ uri: posterUri }}
-                  style={[styles.poster, { width: posterWidth, height: posterHeight }]}
-                  resizeMode="cover"
-                  onError={() => setPosterFailed(true)}
-                />
-              ) : (
-                <View style={[styles.poster, styles.posterFallback, { width: posterWidth, height: posterHeight }]}>
-                  <Ionicons name="tv-outline" size={32} color={Colors.text.muted} />
+            <View style={styles.heroPosterRow}>
+              <View style={styles.posterWrapper}>
+                {posterUri && !posterFailed ? (
+                  <Image
+                    source={{ uri: posterUri }}
+                    style={[styles.poster, { width: posterWidth, height: posterHeight }]}
+                    resizeMode="cover"
+                    onError={() => setPosterFailed(true)}
+                  />
+                ) : (
+                  <View style={[styles.poster, styles.posterFallback, { width: posterWidth, height: posterHeight }]}>
+                    <Ionicons name="tv-outline" size={32} color={Colors.text.muted} />
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.heroInfo}>
+                <Text style={styles.heroTitle}>{show.title}</Text>
+                <View style={styles.heroMeta}>
+                  <Text style={styles.heroYear}>{show.year}</Text>
+                  {show.network ? (
+                    <>
+                      <Text style={styles.heroDot}>·</Text>
+                      <Text style={styles.heroNetwork}>{show.network}</Text>
+                    </>
+                  ) : null}
                 </View>
-              )}
+                {show.status && (
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      { backgroundColor: currentStatusColor + '33' },
+                    ]}
+                  >
+                    <Text style={[styles.statusText, { color: currentStatusColor }]}>
+                      {show.status.charAt(0).toUpperCase() + show.status.slice(1)}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
 
-            <View style={styles.heroInfo}>
-              <Text style={styles.heroTitle}>{show.title}</Text>
-              <View style={styles.heroMeta}>
-                <Text style={styles.heroYear}>{show.year}</Text>
-                {show.network ? (
-                  <>
-                    <Text style={styles.heroDot}>·</Text>
-                    <Text style={styles.heroNetwork}>{show.network}</Text>
-                  </>
-                ) : null}
+            {/* Ratings row inside hero */}
+            {(omdbRatings?.imdb || omdbRatings?.tomatometer || tmdbImages?.tmdbRating) && (
+              <View style={styles.heroRatings}>
+                {omdbRatings?.imdb && (
+                  <View style={styles.ratingChip}>
+                    <Ionicons name="star" size={12} color="#F5C518" />
+                    <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
+                    <Text style={styles.ratingChipLabel}>IMDb</Text>
+                  </View>
+                )}
+                {omdbRatings?.tomatometer && (
+                  <View style={styles.ratingChip}>
+                    <Text style={styles.ratingEmoji}>🍅</Text>
+                    <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
+                    <Text style={styles.ratingChipLabel}>RT</Text>
+                  </View>
+                )}
+                {tmdbImages?.tmdbRating && (
+                  <View style={styles.ratingChip}>
+                    <Text style={styles.ratingEmoji}>🍿</Text>
+                    <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
+                    <Text style={styles.ratingChipLabel}>TMDB</Text>
+                  </View>
+                )}
               </View>
-              {show.status && (
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: currentStatusColor + '33' },
-                  ]}
-                >
-                  <Text style={[styles.statusText, { color: currentStatusColor }]}>
-                    {show.status.charAt(0).toUpperCase() + show.status.slice(1)}
-                  </Text>
-                </View>
-              )}
-            </View>
+            )}
           </View>
         </View>
-
-        {/* Ratings bar */}
-        {(omdbRatings?.imdb || omdbRatings?.tomatometer || tmdbImages?.tmdbRating) && (
-          <View style={styles.ratingsBar}>
-            {omdbRatings?.imdb && (
-              <View style={styles.ratingChip}>
-                <Ionicons name="star" size={13} color="#F5C518" />
-                <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
-                <Text style={styles.ratingChipLabel}>IMDb</Text>
-              </View>
-            )}
-            {omdbRatings?.tomatometer && (
-              <View style={styles.ratingChip}>
-                <Text style={styles.ratingEmoji}>🍅</Text>
-                <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
-                <Text style={styles.ratingChipLabel}>Tomatometer</Text>
-              </View>
-            )}
-            {tmdbImages?.tmdbRating && (
-              <View style={styles.ratingChip}>
-                <Text style={styles.ratingEmoji}>🍿</Text>
-                <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
-                <Text style={styles.ratingChipLabel}>TMDB</Text>
-              </View>
-            )}
-          </View>
-        )}
 
         {/* Action Buttons */}
         <View style={styles.actions}>
@@ -566,7 +568,7 @@ const styles = StyleSheet.create({
   },
   // Backdrop / Hero
   backdropContainer: {
-    height: 280,
+    height: 320,
     position: 'relative',
   },
   backdrop: {
@@ -584,9 +586,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    flexDirection: 'column',
+    padding: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  heroPosterRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: Spacing.lg,
     gap: Spacing.md,
   },
   posterWrapper: {
@@ -644,22 +650,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   // Ratings
-  ratingsBar: {
+  heroRatings: {
     flexDirection: 'row',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
   },
   ratingChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.bg.card,
+    backgroundColor: 'rgba(0,0,0,0.65)',
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    paddingVertical: 4,
   },
   ratingChipText: {
     color: Colors.text.primary,
@@ -667,11 +670,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   ratingChipLabel: {
-    color: Colors.text.muted,
+    color: Colors.text.secondary,
     fontSize: Typography.xs,
   },
   ratingEmoji: {
-    fontSize: 13,
+    fontSize: 12,
   },
   // Actions
   actions: {
