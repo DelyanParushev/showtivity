@@ -69,7 +69,7 @@ export default function ShowDetailScreen() {
   // Fetch real poster/backdrop paths from TMDB (must be before any early returns)
   const tmdbId = show?.ids.tmdb;
   const { data: tmdbImages } = useQuery({
-    queryKey: ['tmdbPoster', tmdbId],
+    queryKey: ['tmdbPoster', tmdbId, 'v2'],
     queryFn: () => getTmdbPoster(tmdbId, TMDB_CONFIG.API_KEY),
     enabled: !!tmdbId && !!TMDB_CONFIG.API_KEY,
     staleTime: 24 * 60 * 60 * 1000,
@@ -192,34 +192,36 @@ export default function ShowDetailScreen() {
                   </Text>
                 </View>
               )}
-
-              {/* Ratings row */}
-              {(omdbRatings?.imdb || omdbRatings?.tomatometer || tmdbImages?.tmdbRating) && (
-                <View style={styles.ratingsRow}>
-                  {omdbRatings?.imdb && (
-                    <View style={styles.ratingChip}>
-                      <Ionicons name="star" size={11} color="#F5C518" />
-                      <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
-                      <Text style={styles.ratingChipLabel}>IMDb</Text>
-                    </View>
-                  )}
-                  {omdbRatings?.tomatometer && (
-                    <View style={styles.ratingChip}>
-                      <Text style={styles.ratingEmoji}>🍅</Text>
-                      <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
-                    </View>
-                  )}
-                  {tmdbImages?.tmdbRating && (
-                    <View style={styles.ratingChip}>
-                      <Text style={styles.ratingEmoji}>🍿</Text>
-                      <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
-                    </View>
-                  )}
-                </View>
-              )}
             </View>
           </View>
         </View>
+
+        {/* Ratings bar */}
+        {(omdbRatings?.imdb || omdbRatings?.tomatometer || tmdbImages?.tmdbRating) && (
+          <View style={styles.ratingsBar}>
+            {omdbRatings?.imdb && (
+              <View style={styles.ratingChip}>
+                <Ionicons name="star" size={13} color="#F5C518" />
+                <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
+                <Text style={styles.ratingChipLabel}>IMDb</Text>
+              </View>
+            )}
+            {omdbRatings?.tomatometer && (
+              <View style={styles.ratingChip}>
+                <Text style={styles.ratingEmoji}>🍅</Text>
+                <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
+                <Text style={styles.ratingChipLabel}>Tomatometer</Text>
+              </View>
+            )}
+            {tmdbImages?.tmdbRating && (
+              <View style={styles.ratingChip}>
+                <Text style={styles.ratingEmoji}>🍿</Text>
+                <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
+                <Text style={styles.ratingChipLabel}>TMDB</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actions}>
@@ -642,32 +644,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   // Ratings
-  ratingsRow: {
+  ratingsBar: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 4,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
   },
   ratingChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    gap: 4,
+    backgroundColor: Colors.bg.card,
     borderRadius: Radius.full,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   ratingChipText: {
     color: Colors.text.primary,
-    fontSize: 11,
+    fontSize: Typography.sm,
     fontWeight: '700',
   },
   ratingChipLabel: {
     color: Colors.text.muted,
-    fontSize: 10,
+    fontSize: Typography.xs,
   },
   ratingEmoji: {
-    fontSize: 11,
+    fontSize: 13,
   },
   // Actions
   actions: {
@@ -906,7 +910,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   castCharacter: {
-    color: Colors.text.muted,
+    color: Colors.text.secondary,
     fontSize: 10,
     textAlign: 'center',
   },
