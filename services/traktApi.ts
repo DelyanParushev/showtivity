@@ -373,6 +373,7 @@ export async function getTmdbPoster(
 export interface OmdbRatings {
   imdb: string | null;
   tomatometer: string | null;
+  popcornmeter: string | null;
   metacritic: string | null;
 }
 
@@ -381,22 +382,23 @@ export async function getOmdbRatings(
   imdbId: string,
   apiKey: string
 ): Promise<OmdbRatings> {
-  if (!imdbId || !apiKey) return { imdb: null, tomatometer: null, metacritic: null };
+  if (!imdbId || !apiKey) return { imdb: null, tomatometer: null, popcornmeter: null, metacritic: null };
   try {
     const response = await axios.get('https://www.omdbapi.com/', {
       params: { i: imdbId, apikey: apiKey },
     });
     const data = response.data;
-    if (data.Response === 'False') return { imdb: null, tomatometer: null, metacritic: null };
+    if (data.Response === 'False') return { imdb: null, tomatometer: null, popcornmeter: null, metacritic: null };
     const ratings: { Source: string; Value: string }[] = data.Ratings ?? [];
     const find = (src: string) => ratings.find((r) => r.Source === src)?.Value ?? null;
     return {
       imdb: data.imdbRating && data.imdbRating !== 'N/A' ? data.imdbRating : null,
       tomatometer: find('Rotten Tomatoes'),
+      popcornmeter: null,
       metacritic: find('Metacritic'),
     };
   } catch {
-    return { imdb: null, tomatometer: null, metacritic: null };
+    return { imdb: null, tomatometer: null, popcornmeter: null, metacritic: null };
   }
 }
 
@@ -408,14 +410,14 @@ export async function getMdbListRatings(
   imdbId: string,
   apiKey: string
 ): Promise<OmdbRatings> {
-  if (!imdbId) return { imdb: null, tomatometer: null, metacritic: null };
+  if (!imdbId) return { imdb: null, tomatometer: null, popcornmeter: null, metacritic: null };
   try {
     const params: Record<string, string> = { i: imdbId };
     if (apiKey) params.apikey = apiKey;
     const response = await axios.get('https://mdblist.com/api/', { params });
     return parseMdbListData(response.data);
   } catch {
-    return { imdb: null, tomatometer: null, metacritic: null };
+    return { imdb: null, tomatometer: null, popcornmeter: null, metacritic: null };
   }
 }
 
@@ -426,17 +428,17 @@ export async function getMdbListRatings(
 export async function getMdbListRatingsProxy(
   imdbId: string
 ): Promise<OmdbRatings> {
-  if (!imdbId) return { imdb: null, tomatometer: null, metacritic: null };
+  if (!imdbId) return { imdb: null, tomatometer: null, popcornmeter: null, metacritic: null };
   try {
     const response = await axios.get(`/api/ratings?imdbId=${encodeURIComponent(imdbId)}`);
     return parseMdbListData(response.data);
   } catch {
-    return { imdb: null, tomatometer: null, metacritic: null };
+    return { imdb: null, tomatometer: null, popcornmeter: null, metacritic: null };
   }
 }
 
 function parseMdbListData(data: any): OmdbRatings {
-  if (!data || data.title === undefined) return { imdb: null, tomatometer: null, metacritic: null };
+  if (!data || data.title === undefined) return { imdb: null, tomatometer: null, popcornmeter: null, metacritic: null };
   const ratings: { source: string; value: number | null }[] = data.ratings ?? [];
   const find = (src: string): string | null => {
     const r = ratings.find((x) => x.source === src);
@@ -444,10 +446,12 @@ function parseMdbListData(data: any): OmdbRatings {
   };
   const imdbVal = find('imdb');
   const rtVal = find('tomatoes');
+  const audienceVal = find('tomatoesaudience');
   const mcVal = find('metacritic');
   return {
     imdb: imdbVal ? `${imdbVal}/10` : null,
     tomatometer: rtVal ? `${rtVal}%` : null,
+    popcornmeter: audienceVal ? `${audienceVal}%` : null,
     metacritic: mcVal ? `${mcVal}/100` : null,
   };
 }

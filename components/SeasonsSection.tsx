@@ -205,13 +205,6 @@ function SeasonCard({
           </View>
         )}
 
-        {/* Completed overlay */}
-        {allWatched && (
-          <View style={styles.watchedOverlay}>
-            <Ionicons name="checkmark-circle" size={34} color={Colors.status.running} />
-          </View>
-        )}
-
         {/* Progress bar along poster bottom */}
         {isInMyShows && aired > 0 && pct > 0 && !allWatched && (
           <View style={styles.posterProgressBg}>
@@ -477,12 +470,6 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: Typography['2xl'],
     fontWeight: '800',
-  },
-  watchedOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   posterProgressBg: {
     position: 'absolute',

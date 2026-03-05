@@ -188,10 +188,23 @@ export default function ShowDetailScreen() {
                   <View
                     style={[
                       styles.statusBadge,
-                      { backgroundColor: currentStatusColor + '33' },
+                      {
+                        backgroundColor: ['ended', 'canceled'].includes(show.status)
+                          ? 'rgba(50,50,60,0.75)'
+                          : currentStatusColor + '33',
+                      },
                     ]}
                   >
-                    <Text style={[styles.statusText, { color: currentStatusColor }]}>
+                    <Text
+                      style={[
+                        styles.statusText,
+                        {
+                          color: ['ended', 'canceled'].includes(show.status)
+                            ? Colors.text.secondary
+                            : currentStatusColor,
+                        },
+                      ]}
+                    >
                       {show.status.charAt(0).toUpperCase() + show.status.slice(1)}
                     </Text>
                   </View>
@@ -201,9 +214,11 @@ export default function ShowDetailScreen() {
                 <View style={styles.heroRatings}>
                   {omdbRatings?.imdb && (
                     <View style={styles.ratingChip}>
-                      <View style={styles.imdbLogo}>
-                        <Text style={styles.imdbLogoText}>IMDb</Text>
-                      </View>
+                      <Image
+                        source={require('../../assets/imdb-logo.png')}
+                        style={styles.imdbLogo}
+                        resizeMode="contain"
+                      />
                       <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
                     </View>
                   )}
@@ -211,6 +226,12 @@ export default function ShowDetailScreen() {
                     <View style={styles.ratingChip}>
                       <Text style={styles.ratingEmoji}>🍅</Text>
                       <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
+                    </View>
+                  )}
+                  {omdbRatings?.popcornmeter && (
+                    <View style={styles.ratingChip}>
+                      <Text style={styles.ratingEmoji}>🍿</Text>
+                      <Text style={styles.ratingChipText}>{omdbRatings.popcornmeter}</Text>
                     </View>
                   )}
                   {tmdbImages?.tmdbRating && (
@@ -449,13 +470,20 @@ export default function ShowDetailScreen() {
               { label: 'Episodes', value: show.aired_episodes?.toString() },
               { label: 'Premiered', value: formatAirDate(show.first_aired) },
               { label: 'Language', value: show.language?.toUpperCase() },
-              { label: 'Rating', value: show.rating > 0 ? `⭐ ${show.rating.toFixed(1)}/10` : null },
+              { label: 'Rating', value: show.rating > 0 ? `${show.rating.toFixed(1)}/10` : null, isRating: true as const },
             ]
               .filter((d) => d.value)
               .map((detail) => (
                 <View key={detail.label} style={styles.detailItem}>
                   <Text style={styles.detailLabel}>{detail.label}</Text>
-                  <Text style={styles.detailValue}>{detail.value}</Text>
+                  {'isRating' in detail && detail.isRating ? (
+                    <View style={styles.ratingDetailRow}>
+                      <Ionicons name="star" size={13} color={Colors.accent.primary} />
+                      <Text style={styles.detailValue}>{detail.value}</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.detailValue}>{detail.value}</Text>
+                  )}
                 </View>
               ))}
           </View>
@@ -679,16 +707,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   imdbLogo: {
-    backgroundColor: '#F5C518',
+    width: 34,
+    height: 16,
     borderRadius: 3,
-    paddingHorizontal: 3,
-    paddingVertical: 1,
-  },
-  imdbLogoText: {
-    color: '#000',
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.2,
   },
   // Actions
   actions: {
@@ -880,6 +901,11 @@ const styles = StyleSheet.create({
     fontSize: Typography.sm,
     fontWeight: '500',
     textTransform: 'capitalize',
+  },
+  ratingDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   // Genres
   genreRow: {
