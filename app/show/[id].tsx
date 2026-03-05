@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Linking,
   Modal,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -89,7 +90,7 @@ export default function ShowDetailScreen() {
   const { data: omdbRatings } = useQuery({
     queryKey: ['mdbRatings', imdbId, 'v2'],
     queryFn: () => getMdbListRatings(imdbId!, MDBLIST_CONFIG.API_KEY),
-    enabled: !!imdbId,
+    enabled: !!imdbId && Platform.OS !== 'web', // mdblist.com has no CORS headers
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
   });

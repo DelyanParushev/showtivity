@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,36 +9,19 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '../../store/authStore';
 import { Colors, Radius, Spacing, Typography } from '../../constants/theme';
-import { TRAKT_CONFIG } from '../../config/trakt';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
-  const { login, handleCallback, isLoading } = useAuthStore();
-  const router = useRouter();
-
-  // Handle OAuth redirect on native
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-    const sub = Linking.addEventListener('url', async ({ url }) => {
-      const parsed = new URL(url);
-      const code = parsed.searchParams.get('code');
-      if (code) {
-        await handleCallback(code);
-      }
-    });
-    return () => sub.remove();
-  }, []);
+  const { login, handleCallback, isLoading, error, clearError } = useAuthStore();
 
   // Handle OAuth redirect on web (check URL params on mount)
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    const url = window.location.href;
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
@@ -92,7 +75,13 @@ export default function LoginScreen() {
           <ActivityIndicator size="large" color={Colors.accent.primary} />
         ) : (
           <>
-            <TouchableOpacity style={styles.loginBtn} onPress={login}>
+            {error && (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle" size={16} color={Colors.accent.primary} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+            <TouchableOpacity style={styles.loginBtn} onPress={() => { clearError(); login(); }}>
               <View style={styles.traktLogo}>
                 <Text style={styles.traktLogoText}>T</Text>
               </View>
@@ -225,6 +214,23 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: Spacing.md,
     alignItems: 'center',
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: 'rgba(229,9,20,0.12)',
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.accent.primary,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    width: '100%',
+  },
+  errorText: {
+    color: Colors.text.primary,
+    fontSize: Typography.sm,
+    flex: 1,
   },
   loginBtn: {
     flexDirection: 'row',

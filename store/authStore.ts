@@ -23,6 +23,7 @@ interface AuthState {
   user: TraktUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  error: string | null;
 
   // Actions
   initialize: () => Promise<void>;
@@ -30,6 +31,7 @@ interface AuthState {
   handleCallback: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   getValidToken: () => Promise<string | null>;
+  clearError: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -37,6 +39,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+  error: null,
 
   initialize: async () => {
     set({ isLoading: true });
@@ -89,8 +92,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  clearError: () => set({ error: null }),
+
   handleCallback: async (code: string) => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const redirectUri =
         Platform.OS === 'web'
@@ -100,6 +105,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await saveTokens(tokens);
       const user = await getMe(tokens.access_token);
       set({ tokens, user, isAuthenticated: true });
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.error_description ??
+        err?.response?.data?.error ??
+        err?.message ??
+        'Sign-in failed. Please try again.';
+      set({ error: String(msg) });
     } finally {
       set({ isLoading: false });
     }
