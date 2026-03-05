@@ -387,7 +387,9 @@ export function useCategorizedShows() {
       const bTime = b.lastWatchedAt ? new Date(b.lastWatchedAt).getTime() : 0;
       return bTime - aTime;
     });
-  const watchlist = shows.filter((s) => s.category === 'watchlist');
+  const watchlist = shows
+    .filter((s) => s.category === 'watchlist')
+    .sort((a, b) => (b.watchlistId ?? 0) - (a.watchlistId ?? 0));
   const running = shows
     .filter((s) => {
       if (s.category === 'running') return true;

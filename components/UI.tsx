@@ -129,6 +129,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+    overflow: 'hidden',
   },
   toggleIndicator: {
     width: 22,
@@ -136,12 +137,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   title: {
-    flex: 1,
     color: Colors.text.primary,
     fontSize: Typography.lg,
     fontWeight: '700',
+    flexShrink: 1,
   },
   badge: {
     borderRadius: Radius.full,

@@ -63,7 +63,7 @@ export const CategoryConfig = {
     description: 'Shows you are actively watching',
   },
   watchlist: {
-    label: 'Start Watching',
+    label: 'Watchlist',
     color: Colors.status.watchlist,
     icon: 'bookmark',
     description: 'Shows you want to watch',

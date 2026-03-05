@@ -37,6 +37,8 @@ export function ShowCard({
 }: ShowCardProps) {
   const { show, category, nextEpisode, daysUntilNext, progress } = item;
   const categoryConfig = CategoryConfig[category];
+  const resolvedWidth = cardWidth ?? CARD_WIDTH;
+  const resolvedHeight = resolvedWidth * 1.5;
   const posterUrl = show.ids.tmdb
     ? `${TMDB_CONFIG.IMAGE_BASE_URL}${show.ids.tmdb ? `/3/tv/${show.ids.tmdb}/images` : ''}`
     : null;
@@ -91,12 +93,12 @@ export function ShowCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width: cardWidth ?? CARD_WIDTH }]}
+      style={[styles.card, { width: resolvedWidth }]}
       onPress={onPress}
       activeOpacity={0.85}
     >
       {/* Poster */}
-      <View style={[styles.posterContainer, { height: CARD_HEIGHT }]}>
+      <View style={[styles.posterContainer, { height: resolvedHeight }]}>
         <PosterImage tmdbId={show.ids.tmdb} title={show.title} large />
 
         {/* Watchlist toggle button */}
