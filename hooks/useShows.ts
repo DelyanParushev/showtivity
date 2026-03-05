@@ -330,11 +330,16 @@ export function useAddToWatchlist() {
           return [...old, entry];
         });
       }
-      // Background refetch to get fully-enriched data (next episode, progress, etc.)
-      queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
-      queryClient.invalidateQueries({ queryKey: queryKeys.watchlist });
-      // Refresh recommendations so the added show disappears from the list
+      // Refresh recommendations so the added show disappears from the list immediately
       queryClient.invalidateQueries({ queryKey: queryKeys.recommendations });
+      queryClient.invalidateQueries({ queryKey: queryKeys.watchlist });
+      // Delay the allShows refetch so Trakt's server has time to reflect the new
+      // addition. An immediate invalidation races the server and the refetch can
+      // come back without the new show, overwriting the optimistic entry and making
+      // the show appear to vanish until the next natural stale-time expiry.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
+      }, 3000);
     },
   });
 }
@@ -352,9 +357,27 @@ export function useRemoveFromWatchlist() {
       if (!token) throw new Error('Not authenticated');
       await removeFromWatchlist(token, showTraktId);
     },
+    onMutate: async (showTraktId: number) => {
+      // Optimistically remove the show from the cache immediately
+      const prev = queryClient.getQueryData<EnrichedShow[]>(queryKeys.allShows);
+      if (prev) {
+        queryClient.setQueryData<EnrichedShow[]>(
+          queryKeys.allShows,
+          prev.filter((s) => s.show.ids.trakt !== showTraktId)
+        );
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) {
+        queryClient.setQueryData(queryKeys.allShows, ctx.prev);
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
       queryClient.invalidateQueries({ queryKey: queryKeys.watchlist });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
+      }, 3000);
     },
   });
 }
