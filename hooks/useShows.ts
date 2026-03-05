@@ -317,8 +317,7 @@ export function useAddToWatchlist() {
     },
     onSuccess: (_data, { traktId, show }) => {
       // Belt-and-suspenders: if the optimistic update in onMutate was skipped
-      // (e.g. the initial fetch hadn't completed yet), insert the show now that
-      // we know for certain the API call succeeded.
+      // (e.g. the allShows query wasn't yet in cache), insert the show now.
       if (show) {
         queryClient.setQueryData<EnrichedShow[]>(queryKeys.allShows, (old) => {
           if (!old) return old;
@@ -333,16 +332,13 @@ export function useAddToWatchlist() {
           return [...old, entry];
         });
       }
-      // Refresh recommendations so the added show disappears from the list immediately
+      // Refresh recommendations so the added show disappears from the list immediately.
+      // Do NOT invalidate allShows here — Trakt takes several seconds to propagate
+      // the new entry, so any immediate refetch returns the old list and overwrites
+      // our optimistic update. The natural staleTime refetch (5 min) will enrich the
+      // data once Trakt is consistent.
       queryClient.invalidateQueries({ queryKey: queryKeys.recommendations });
       queryClient.invalidateQueries({ queryKey: queryKeys.watchlist });
-      // Delay the allShows refetch so Trakt's server has time to reflect the new
-      // addition. An immediate invalidation races the server and the refetch can
-      // come back without the new show, overwriting the optimistic entry and making
-      // the show appear to vanish until the next natural stale-time expiry.
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
-      }, 5000);
     },
   });
 }
@@ -379,10 +375,10 @@ export function useRemoveFromWatchlist() {
       }
     },
     onSuccess: () => {
+      // Do NOT immediately invalidate allShows — Trakt takes time to propagate
+      // the removal. The optimistic delete already removed it from the cache.
+      // The natural staleTime refetch will confirm it's gone.
       queryClient.invalidateQueries({ queryKey: queryKeys.watchlist });
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
-      }, 3000);
     },
   });
 }
