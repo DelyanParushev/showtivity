@@ -291,6 +291,9 @@ export function useAddToWatchlist() {
       await addToWatchlist(token, traktId);
     },
     onMutate: async ({ traktId, show }) => {
+      // Cancel any in-flight allShows refetches so they can't overwrite our
+      // optimistic update when they complete.
+      await queryClient.cancelQueries({ queryKey: queryKeys.allShows });
       // Snapshot the current cache for rollback on error
       const prev = queryClient.getQueryData<EnrichedShow[]>(queryKeys.allShows);
       // Optimistically insert the show immediately (if the cache is already populated)
@@ -339,7 +342,7 @@ export function useAddToWatchlist() {
       // the show appear to vanish until the next natural stale-time expiry.
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
-      }, 3000);
+      }, 5000);
     },
   });
 }
@@ -358,6 +361,8 @@ export function useRemoveFromWatchlist() {
       await removeFromWatchlist(token, showTraktId);
     },
     onMutate: async (showTraktId: number) => {
+      // Cancel in-flight refetches before optimistic removal
+      await queryClient.cancelQueries({ queryKey: queryKeys.allShows });
       // Optimistically remove the show from the cache immediately
       const prev = queryClient.getQueryData<EnrichedShow[]>(queryKeys.allShows);
       if (prev) {
