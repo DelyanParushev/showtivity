@@ -15,14 +15,14 @@ import {
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { getShowDetails, getNextEpisode, getTmdbPoster, getTmdbCast, getOmdbRatings } from '../../services/traktApi';
+import { getShowDetails, getNextEpisode, getTmdbPoster, getTmdbCast, getMdbListRatings } from '../../services/traktApi';
 import { useAddToWatchlist, useRemoveFromWatchlist, useAllShows, useMarkEpisodeWatched, useShowProgressDetail } from '../../hooks/useShows';
 import { useAuthStore } from '../../store/authStore';
 import { Colors, Radius, Spacing, Typography, CategoryConfig } from '../../constants/theme';
 import { countdownLabel, countdownColor, formatAirDate, daysUntil } from '../../utils/dateUtils';
 import { LoadingSpinner } from '../../components/UI';
 import { SeasonsSection } from '../../components/SeasonsSection';
-import { TMDB_CONFIG, OMDB_CONFIG } from '../../config/trakt';
+import { TMDB_CONFIG, MDBLIST_CONFIG } from '../../config/trakt';
 
 export default function ShowDetailScreen() {
   const { id, title } = useLocalSearchParams<{ id: string; title: string }>();
@@ -84,12 +84,12 @@ export default function ShowDetailScreen() {
     gcTime: 24 * 60 * 60 * 1000,
   });
 
-  // Fetch IMDb & Rotten Tomatoes ratings via OMDB (requires EXPO_PUBLIC_OMDB_API_KEY)
+  // Fetch IMDb + Rotten Tomatoes + Metacritic via MDBList
   const imdbId = show?.ids.imdb;
   const { data: omdbRatings } = useQuery({
-    queryKey: ['omdbRatings', imdbId],
-    queryFn: () => getOmdbRatings(imdbId!, OMDB_CONFIG.API_KEY),
-    enabled: !!imdbId && !!OMDB_CONFIG.API_KEY,
+    queryKey: ['mdbRatings', imdbId],
+    queryFn: () => getMdbListRatings(imdbId!, MDBLIST_CONFIG.API_KEY),
+    enabled: !!imdbId,
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
   });
@@ -197,31 +197,29 @@ export default function ShowDetailScreen() {
             </View>
 
             {/* Ratings row inside hero */}
-            {(omdbRatings?.imdb || omdbRatings?.tomatometer || tmdbImages?.tmdbRating) && (
-              <View style={styles.heroRatings}>
-                {omdbRatings?.imdb && (
-                  <View style={styles.ratingChip}>
-                    <Ionicons name="star" size={12} color="#F5C518" />
-                    <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
-                    <Text style={styles.ratingChipLabel}>IMDb</Text>
-                  </View>
-                )}
-                {omdbRatings?.tomatometer && (
-                  <View style={styles.ratingChip}>
-                    <Text style={styles.ratingEmoji}>🍅</Text>
-                    <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
-                    <Text style={styles.ratingChipLabel}>RT</Text>
-                  </View>
-                )}
-                {tmdbImages?.tmdbRating && (
-                  <View style={styles.ratingChip}>
-                    <Text style={styles.ratingEmoji}>🍿</Text>
-                    <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
-                    <Text style={styles.ratingChipLabel}>TMDB</Text>
-                  </View>
-                )}
-              </View>
-            )}
+            <View style={styles.heroRatings}>
+              {omdbRatings?.imdb && (
+                <View style={styles.ratingChip}>
+                  <Ionicons name="star" size={12} color="#F5C518" />
+                  <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
+                  <Text style={styles.ratingChipLabel}>IMDb</Text>
+                </View>
+              )}
+              {show.rating > 0 && (
+                <View style={styles.ratingChip}>
+                  <Ionicons name="flame" size={12} color="#e50914" />
+                  <Text style={styles.ratingChipText}>{show.rating.toFixed(1)}</Text>
+                  <Text style={styles.ratingChipLabel}>Trakt</Text>
+                </View>
+              )}
+              {tmdbImages?.tmdbRating && (
+                <View style={styles.ratingChip}>
+                  <Text style={styles.ratingEmoji}>🍿</Text>
+                  <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
+                  <Text style={styles.ratingChipLabel}>TMDB</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 

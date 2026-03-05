@@ -376,6 +376,7 @@ export interface OmdbRatings {
   metacritic: string | null;
 }
 
+/** @deprecated use getMdbListRatings instead */
 export async function getOmdbRatings(
   imdbId: string,
   apiKey: string
@@ -393,6 +394,39 @@ export async function getOmdbRatings(
       imdb: data.imdbRating && data.imdbRating !== 'N/A' ? data.imdbRating : null,
       tomatometer: find('Rotten Tomatoes'),
       metacritic: find('Metacritic'),
+    };
+  } catch {
+    return { imdb: null, tomatometer: null, metacritic: null };
+  }
+}
+
+/**
+ * Fetch aggregated ratings from MDBList (imdb, tomatometer, metacritic).
+ * Free tier: 1000 req/day. Get a key at https://mdblist.com/
+ */
+export async function getMdbListRatings(
+  imdbId: string,
+  apiKey: string
+): Promise<OmdbRatings> {
+  if (!imdbId) return { imdb: null, tomatometer: null, metacritic: null };
+  try {
+    const params: Record<string, string> = { i: imdbId };
+    if (apiKey) params.apikey = apiKey;
+    const response = await axios.get('https://mdblist.com/api/', { params });
+    const data = response.data;
+    if (!data || data.title === undefined) return { imdb: null, tomatometer: null, metacritic: null };
+    const ratings: { source: string; value: number | null }[] = data.ratings ?? [];
+    const find = (src: string): string | null => {
+      const r = ratings.find((x) => x.source === src);
+      return r && r.value !== null && r.value > 0 ? String(r.value) : null;
+    };
+    const imdbVal = find('imdb');
+    const rtVal = find('tomatoes');
+    const mcVal = find('metacritic');
+    return {
+      imdb: imdbVal ? `${imdbVal}/10` : null,
+      tomatometer: rtVal ? `${rtVal}%` : null,
+      metacritic: mcVal ? `${mcVal}/100` : null,
     };
   } catch {
     return { imdb: null, tomatometer: null, metacritic: null };

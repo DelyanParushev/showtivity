@@ -35,7 +35,13 @@ export const FANART_CONFIG = {
 };
 
 export const OMDB_CONFIG = {
-  // Optional: for IMDb & Rotten Tomatoes ratings. Get a free key at https://www.omdbapi.com/apikey.aspx
+  // Optional: for IMDb ratings fallback. Get a free key at https://www.omdbapi.com/apikey.aspx
   API_KEY: process.env.EXPO_PUBLIC_OMDB_API_KEY ?? '',
   BASE_URL: 'https://www.omdbapi.com',
+};
+
+export const MDBLIST_CONFIG = {
+  // Provides IMDb + Rotten Tomatoes + Metacritic ratings for TV shows.
+  // Get a FREE key (1000 req/day) at https://mdblist.com/  → Account → API
+  API_KEY: process.env.EXPO_PUBLIC_MDBLIST_API_KEY ?? '',
 };
