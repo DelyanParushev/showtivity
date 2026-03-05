@@ -346,8 +346,8 @@ export async function searchShows(
 export async function getTmdbPoster(
   tmdbId: number | undefined,
   tmdbApiKey: string
-): Promise<{ poster: string | null; backdrop: string | null }> {
-  if (!tmdbId || !tmdbApiKey) return { poster: null, backdrop: null };
+): Promise<{ poster: string | null; backdrop: string | null; tmdbRating: number | null }> {
+  if (!tmdbId || !tmdbApiKey) return { poster: null, backdrop: null, tmdbRating: null };
   try {
     const response = await axios.get(
       `https://api.themoviedb.org/3/tv/${tmdbId}`,
@@ -361,9 +361,41 @@ export async function getTmdbPoster(
       backdrop: data.backdrop_path
         ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}`
         : null,
+      tmdbRating: typeof data.vote_average === 'number' && data.vote_average > 0
+        ? Math.round(data.vote_average * 10)
+        : null,
     };
   } catch {
-    return { poster: null, backdrop: null };
+    return { poster: null, backdrop: null, tmdbRating: null };
+  }
+}
+
+export interface OmdbRatings {
+  imdb: string | null;
+  tomatometer: string | null;
+  metacritic: string | null;
+}
+
+export async function getOmdbRatings(
+  imdbId: string,
+  apiKey: string
+): Promise<OmdbRatings> {
+  if (!imdbId || !apiKey) return { imdb: null, tomatometer: null, metacritic: null };
+  try {
+    const response = await axios.get('https://www.omdbapi.com/', {
+      params: { i: imdbId, apikey: apiKey },
+    });
+    const data = response.data;
+    if (data.Response === 'False') return { imdb: null, tomatometer: null, metacritic: null };
+    const ratings: { Source: string; Value: string }[] = data.Ratings ?? [];
+    const find = (src: string) => ratings.find((r) => r.Source === src)?.Value ?? null;
+    return {
+      imdb: data.imdbRating && data.imdbRating !== 'N/A' ? data.imdbRating : null,
+      tomatometer: find('Rotten Tomatoes'),
+      metacritic: find('Metacritic'),
+    };
+  } catch {
+    return { imdb: null, tomatometer: null, metacritic: null };
   }
 }
 

@@ -9,32 +9,36 @@ import {
   Image,
   ActivityIndicator,
   Linking,
-  Alert,
+  Modal,
+  useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { getShowDetails, getNextEpisode, getShowProgress, getTmdbPoster, getTmdbCast } from '../../services/traktApi';
-import { useAddToWatchlist, useRemoveFromWatchlist, useAllShows } from '../../hooks/useShows';
+import { getShowDetails, getNextEpisode, getTmdbPoster, getTmdbCast, getOmdbRatings } from '../../services/traktApi';
+import { useAddToWatchlist, useRemoveFromWatchlist, useAllShows, useMarkEpisodeWatched, useShowProgressDetail } from '../../hooks/useShows';
 import { useAuthStore } from '../../store/authStore';
 import { Colors, Radius, Spacing, Typography, CategoryConfig } from '../../constants/theme';
 import { countdownLabel, countdownColor, formatAirDate, daysUntil } from '../../utils/dateUtils';
 import { LoadingSpinner } from '../../components/UI';
 import { SeasonsSection } from '../../components/SeasonsSection';
-import { TMDB_CONFIG } from '../../config/trakt';
+import { TMDB_CONFIG, OMDB_CONFIG } from '../../config/trakt';
 
 export default function ShowDetailScreen() {
   const { id, title } = useLocalSearchParams<{ id: string; title: string }>();
   const navigation = useNavigation();
   const router = useRouter();
   const getValidToken = useAuthStore((s) => s.getValidToken);
+  const { width } = useWindowDimensions();
   const [backdropFailed, setBackdropFailed] = useState(false);
   const [posterFailed, setPosterFailed] = useState(false);
   const [optimisticAdded, setOptimisticAdded] = useState(false);
+  const [removeConfirmVisible, setRemoveConfirmVisible] = useState(false);
 
   const { data: myShows = [] } = useAllShows();
   const addMutation = useAddToWatchlist();
   const removeMutation = useRemoveFromWatchlist();
+  const markWatchedMutation = useMarkEpisodeWatched(id);
 
   const myShow = myShows.find((s) => s.show.ids.slug === id);
   const isInList = Boolean(myShow) || optimisticAdded;
@@ -59,16 +63,8 @@ export default function ShowDetailScreen() {
     enabled: Boolean(id) && Boolean(show),
   });
 
-  // Fetch watch progress if user has watched this show
-  const { data: progress } = useQuery({
-    queryKey: ['progress', id],
-    queryFn: async () => {
-      const token = await getValidToken();
-      if (!token) return null;
-      return getShowProgress(token, id);
-    },
-    enabled: Boolean(id) && Boolean(myShow?.category === 'watching'),
-  });
+  // Fetch watch progress if user is actively watching this show
+  const { data: progress } = useShowProgressDetail(id, myShow?.category === 'watching');
 
   // Fetch real poster/backdrop paths from TMDB (must be before any early returns)
   const tmdbId = show?.ids.tmdb;
@@ -87,6 +83,20 @@ export default function ShowDetailScreen() {
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
   });
+
+  // Fetch IMDb & Rotten Tomatoes ratings via OMDB (requires EXPO_PUBLIC_OMDB_API_KEY)
+  const imdbId = show?.ids.imdb;
+  const { data: omdbRatings } = useQuery({
+    queryKey: ['omdbRatings', imdbId],
+    queryFn: () => getOmdbRatings(imdbId!, OMDB_CONFIG.API_KEY),
+    enabled: !!imdbId && !!OMDB_CONFIG.API_KEY,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+  });
+
+  // Poster size matching Awaiting Release Date grid posters
+  const posterWidth = Math.floor((width - 48) / 3);
+  const posterHeight = Math.floor(posterWidth * 1.5);
 
   React.useEffect(() => {
     if (show) {
@@ -148,12 +158,12 @@ export default function ShowDetailScreen() {
               {posterUri && !posterFailed ? (
                 <Image
                   source={{ uri: posterUri }}
-                  style={styles.poster}
+                  style={[styles.poster, { width: posterWidth, height: posterHeight }]}
                   resizeMode="cover"
                   onError={() => setPosterFailed(true)}
                 />
               ) : (
-                <View style={[styles.poster, styles.posterFallback]}>
+                <View style={[styles.poster, styles.posterFallback, { width: posterWidth, height: posterHeight }]}>
                   <Ionicons name="tv-outline" size={32} color={Colors.text.muted} />
                 </View>
               )}
@@ -182,6 +192,31 @@ export default function ShowDetailScreen() {
                   </Text>
                 </View>
               )}
+
+              {/* Ratings row */}
+              {(omdbRatings?.imdb || omdbRatings?.tomatometer || tmdbImages?.tmdbRating) && (
+                <View style={styles.ratingsRow}>
+                  {omdbRatings?.imdb && (
+                    <View style={styles.ratingChip}>
+                      <Ionicons name="star" size={11} color="#F5C518" />
+                      <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
+                      <Text style={styles.ratingChipLabel}>IMDb</Text>
+                    </View>
+                  )}
+                  {omdbRatings?.tomatometer && (
+                    <View style={styles.ratingChip}>
+                      <Text style={styles.ratingEmoji}>🍅</Text>
+                      <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
+                    </View>
+                  )}
+                  {tmdbImages?.tmdbRating && (
+                    <View style={styles.ratingChip}>
+                      <Text style={styles.ratingEmoji}>🍿</Text>
+                      <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
+                    </View>
+                  )}
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -192,20 +227,11 @@ export default function ShowDetailScreen() {
             style={[styles.actionBtn, styles.actionBtnPrimary]}
             onPress={() => {
               if (isInList) {
-                setOptimisticAdded(false);
-                removeMutation.mutate(show.ids.trakt, {
-                  onError: (err) => {
-                    setOptimisticAdded(Boolean(myShow));
-                    Alert.alert('Error', 'Could not remove show: ' + (err?.message ?? 'Unknown error'));
-                  },
-                });
+                setRemoveConfirmVisible(true);
               } else {
                 setOptimisticAdded(true);
                 addMutation.mutate({ traktId: show.ids.trakt, show }, {
-                  onError: (err) => {
-                    setOptimisticAdded(false);
-                    Alert.alert('Error', 'Could not add show: ' + (err?.message ?? 'Unknown error'));
-                  },
+                  onError: () => setOptimisticAdded(false),
                 });
               }
             }}
@@ -274,6 +300,37 @@ export default function ShowDetailScreen() {
                   {completionPct.toFixed(0)}%
                 </Text>
               </View>
+
+              {/* Current episode row */}
+              {progress.next_episode && (
+                <>
+                  <View style={styles.progressDivider} />
+                  <View style={styles.currentEpRow}>
+                    <View style={styles.currentEpInfo}>
+                      <Text style={styles.currentEpCode}>
+                        S{String(progress.next_episode.season).padStart(2, '0')}E
+                        {String(progress.next_episode.number).padStart(2, '0')}
+                      </Text>
+                      <Text style={styles.currentEpTitle} numberOfLines={1}>
+                        {progress.next_episode.title ?? 'Unknown episode'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.markWatchedBtn}
+                      onPress={() =>
+                        markWatchedMutation.mutate(progress.next_episode!.ids.trakt)
+                      }
+                      disabled={markWatchedMutation.isPending}
+                    >
+                      {markWatchedMutation.isPending ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.markWatchedBtnText}>Mark watched</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         )}
@@ -326,6 +383,17 @@ export default function ShowDetailScreen() {
           </View>
         )}
 
+        {/* Seasons & Episodes */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Seasons & Episodes</Text>
+          <SeasonsSection
+            showSlug={show.ids.slug}
+            showTraktId={show.ids.trakt}
+            showTmdbId={show.ids.tmdb}
+            isInMyShows={isInList}
+          />
+        </View>
+
         {/* Cast */}
         {castMembers.length > 0 && (
           <View style={styles.section}>
@@ -363,17 +431,6 @@ export default function ShowDetailScreen() {
             </ScrollView>
           </View>
         )}
-
-        {/* Seasons & Episodes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Seasons & Episodes</Text>
-          <SeasonsSection
-            showSlug={show.ids.slug}
-            showTraktId={show.ids.trakt}
-            showTmdbId={show.ids.tmdb}
-            isInMyShows={isInList}
-          />
-        </View>
 
         {/* Details */}
         <View style={styles.section}>
@@ -450,6 +507,46 @@ export default function ShowDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Remove from Watchlist confirmation modal */}
+      <Modal
+        visible={removeConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRemoveConfirmVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Remove from Watchlist</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to remove &quot;{show.title}&quot; from your watchlist?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalCancelBtn]}
+                onPress={() => setRemoveConfirmVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalRemoveBtn]}
+                onPress={() => {
+                  setRemoveConfirmVisible(false);
+                  setOptimisticAdded(false);
+                  removeMutation.mutate(show.ids.trakt);
+                }}
+                disabled={removeMutation.isPending}
+              >
+                {removeMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalRemoveText}>Remove</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -467,7 +564,7 @@ const styles = StyleSheet.create({
   },
   // Backdrop / Hero
   backdropContainer: {
-    height: 240,
+    height: 280,
     position: 'relative',
   },
   backdrop: {
@@ -498,8 +595,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   poster: {
-    width: 80,
-    height: 120,
     borderRadius: Radius.sm,
     backgroundColor: Colors.bg.elevated,
   },
@@ -545,6 +640,34 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: Typography.xs,
     fontWeight: '600',
+  },
+  // Ratings
+  ratingsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  ratingChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: Radius.full,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  ratingChipText: {
+    color: Colors.text.primary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  ratingChipLabel: {
+    color: Colors.text.muted,
+    fontSize: 10,
+  },
+  ratingEmoji: {
+    fontSize: 11,
   },
   // Actions
   actions: {
@@ -623,6 +746,45 @@ const styles = StyleSheet.create({
   progressPct: {
     color: Colors.status.watching,
     fontSize: Typography.sm,
+    fontWeight: '700',
+  },
+  progressDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginTop: 4,
+  },
+  currentEpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
+    paddingTop: 2,
+  },
+  currentEpInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  currentEpCode: {
+    color: Colors.text.muted,
+    fontSize: Typography.xs,
+    fontWeight: '600',
+  },
+  currentEpTitle: {
+    color: Colors.text.primary,
+    fontSize: Typography.sm,
+    fontWeight: '500',
+  },
+  markWatchedBtn: {
+    backgroundColor: Colors.accent.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 7,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  markWatchedBtnText: {
+    color: '#fff',
+    fontSize: Typography.xs,
     fontWeight: '700',
   },
   // Next Episode
@@ -765,5 +927,65 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     fontSize: Typography.sm,
     fontWeight: '500',
+  },
+  // Confirmation modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  modalBox: {
+    width: '100%',
+    backgroundColor: Colors.bg.card,
+    borderRadius: Radius.lg,
+    padding: Spacing.xl,
+    gap: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  modalTitle: {
+    color: Colors.text.primary,
+    fontSize: Typography.lg,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  modalMessage: {
+    color: Colors.text.secondary,
+    fontSize: Typography.base,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  modalBtn: {
+    flex: 1,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 46,
+  },
+  modalCancelBtn: {
+    backgroundColor: Colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  modalRemoveBtn: {
+    backgroundColor: Colors.status.ended,
+  },
+  modalCancelText: {
+    color: Colors.text.primary,
+    fontSize: Typography.base,
+    fontWeight: '600',
+  },
+  modalRemoveText: {
+    color: '#fff',
+    fontSize: Typography.base,
+    fontWeight: '700',
   },
 });

@@ -33,3 +33,9 @@ export const FANART_CONFIG = {
   API_KEY: process.env.EXPO_PUBLIC_FANART_API_KEY ?? '',
   BASE_URL: 'https://webservice.fanart.tv/v3',
 };
+
+export const OMDB_CONFIG = {
+  // Optional: for IMDb & Rotten Tomatoes ratings. Get a free key at https://www.omdbapi.com/apikey.aspx
+  API_KEY: process.env.EXPO_PUBLIC_OMDB_API_KEY ?? '',
+  BASE_URL: 'https://www.omdbapi.com',
+};
