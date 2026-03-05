@@ -26,15 +26,33 @@ export function SectionHeader({
   count,
   color,
   icon,
+  expanded,
+  onToggle,
   filterLabel,
   onFilter,
 }: SectionHeaderProps) {
   return (
     <View style={styles.header}>
-      <View style={[styles.iconContainer, { backgroundColor: color + '22' }]}>
-        <Ionicons name={icon as any} size={18} color={color} />
-      </View>
-      <Text style={styles.title}>{title}</Text>
+      <TouchableOpacity
+        style={styles.headerLeft}
+        onPress={onToggle}
+        activeOpacity={onToggle ? 0.7 : 1}
+        disabled={!onToggle}
+      >
+        <View style={[styles.iconContainer, { backgroundColor: color + '22' }]}>
+          <Ionicons name={icon as any} size={18} color={color} />
+        </View>
+        <Text style={styles.title}>{title}</Text>
+        {onToggle && (
+          <View style={[styles.toggleIndicator, { backgroundColor: color + '22' }]}>
+            <Ionicons
+              name={expanded ? 'remove' : 'chevron-down'}
+              size={14}
+              color={color}
+            />
+          </View>
+        )}
+      </TouchableOpacity>
       <View style={[styles.badge, { backgroundColor: color + '22' }]}>
         <Text style={[styles.badgeText, { color }]}>{count}</Text>
       </View>
@@ -103,6 +121,19 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: Radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  toggleIndicator: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -9,6 +9,7 @@ import {
   FlatList,
   Modal,
   Pressable,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -251,6 +252,12 @@ function Section({
 }: SectionProps) {
   const config = CategoryConfig[sectionKey];
   const isFiltered = filter !== 'All';
+  const [expanded, setExpanded] = useState(false);
+  const { width } = useWindowDimensions();
+  const contentWidth = width - Spacing.lg * 2;
+  const GRID_COLS = 3;
+  const GRID_GAP = Spacing.md;
+  const cardWidth = (contentWidth - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
 
   return (
     <View style={styles.section}>
@@ -262,6 +269,8 @@ function Section({
           icon={config.icon}
           filterLabel={filter}
           onFilter={onOpenFilter}
+          expanded={expanded}
+          onToggle={() => setExpanded((v) => !v)}
         />
       </View>
 
@@ -279,6 +288,17 @@ function Section({
               subMessage={emptySubMessage}
             />
           )}
+        </View>
+      ) : expanded ? (
+        <View style={[styles.sectionPadded, styles.gridContainer]}>
+          {shows.map((item) => (
+            <ShowCard
+              key={item.show.ids.trakt}
+              item={item}
+              onPress={() => onPressShow(item)}
+              cardWidth={cardWidth}
+            />
+          ))}
         </View>
       ) : (
         <FlatList
@@ -377,6 +397,12 @@ const styles = StyleSheet.create({
   },
   horizontalList: {
     paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.md,
     paddingBottom: Spacing.sm,
   },

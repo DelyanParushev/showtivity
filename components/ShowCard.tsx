@@ -24,6 +24,7 @@ interface ShowCardProps {
   onWatchlistToggle?: () => void;
   isInWatchlist?: boolean;
   compact?: boolean;
+  cardWidth?: number;
 }
 
 export function ShowCard({
@@ -32,6 +33,7 @@ export function ShowCard({
   onWatchlistToggle,
   isInWatchlist,
   compact = false,
+  cardWidth,
 }: ShowCardProps) {
   const { show, category, nextEpisode, daysUntilNext, progress } = item;
   const categoryConfig = CategoryConfig[category];
@@ -89,7 +91,7 @@ export function ShowCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width: CARD_WIDTH }]}
+      style={[styles.card, { width: cardWidth ?? CARD_WIDTH }]}
       onPress={onPress}
       activeOpacity={0.85}
     >
