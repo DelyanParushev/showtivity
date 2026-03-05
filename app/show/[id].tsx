@@ -87,7 +87,7 @@ export default function ShowDetailScreen() {
   // Fetch IMDb + Rotten Tomatoes + Metacritic via MDBList
   const imdbId = show?.ids.imdb;
   const { data: omdbRatings } = useQuery({
-    queryKey: ['mdbRatings', imdbId],
+    queryKey: ['mdbRatings', imdbId, 'v2'],
     queryFn: () => getMdbListRatings(imdbId!, MDBLIST_CONFIG.API_KEY),
     enabled: !!imdbId,
     staleTime: 24 * 60 * 60 * 1000,
@@ -205,11 +205,11 @@ export default function ShowDetailScreen() {
                   <Text style={styles.ratingChipLabel}>IMDb</Text>
                 </View>
               )}
-              {show.rating > 0 && (
+              {omdbRatings?.tomatometer && (
                 <View style={styles.ratingChip}>
-                  <Ionicons name="flame" size={12} color="#e50914" />
-                  <Text style={styles.ratingChipText}>{show.rating.toFixed(1)}</Text>
-                  <Text style={styles.ratingChipLabel}>Trakt</Text>
+                  <Text style={styles.ratingEmoji}>🍅</Text>
+                  <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
+                  <Text style={styles.ratingChipLabel}>RT</Text>
                 </View>
               )}
               {tmdbImages?.tmdbRating && (
@@ -981,7 +981,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   modalRemoveBtn: {
-    backgroundColor: Colors.status.ended,
+    backgroundColor: Colors.accent.primary,
   },
   modalCancelText: {
     color: Colors.text.primary,
