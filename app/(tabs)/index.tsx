@@ -20,15 +20,13 @@ import { Colors, Spacing, Typography, CategoryConfig, Radius } from '../../const
 import { useAuthStore } from '../../store/authStore';
 import type { EnrichedShow } from '../../types/trakt';
 
-type SectionKey = 'watching' | 'watchlist' | 'ended' | 'finished';
+type SectionKey = 'watching' | 'watchlist' | 'finished';
 type FilterValue = 'All' | 'Ended' | 'Returning Series' | 'Canceled' | 'Finished';
 
 const FILTER_OPTIONS: FilterValue[] = ['All', 'Ended', 'Returning Series', 'Canceled'];
-const ENDED_FILTER_OPTIONS: FilterValue[] = ['All', 'Ended', 'Returning Series', 'Canceled', 'Finished'];
 const FINISHED_FILTER_OPTIONS: FilterValue[] = ['All', 'Ended', 'Canceled'];
 
 function getFilterOptions(key: SectionKey | null): FilterValue[] {
-  if (key === 'ended') return ENDED_FILTER_OPTIONS;
   if (key === 'finished') return FINISHED_FILTER_OPTIONS;
   return FILTER_OPTIONS;
 }
@@ -53,7 +51,6 @@ export default function HomeScreen() {
   const [filters, setFilters] = useState<Record<SectionKey, FilterValue>>({
     watching: 'All',
     watchlist: 'All',
-    ended: 'All',
     finished: 'All',
   });
 
@@ -104,7 +101,7 @@ export default function HomeScreen() {
   // by useCategorizedShows, retaining category === 'watching'. Count those.
   const finished = ended.filter((s) => s.category === 'watching').length;
 
-  const totalShows = watching.length + watchlist.length + ended.length;
+  const totalShows = watching.length + watchlist.length + finished;
 
   const activeFilterKey = filterModal;
   const activeFilterColor = activeFilterKey ? CategoryConfig[activeFilterKey].color : '#fff';
@@ -142,7 +139,6 @@ export default function HomeScreen() {
         >
           <StatChip label="Watching" value={watching.length} color={Colors.status.watching} icon="play-circle" />
           <StatChip label="Watchlist" value={watchlist.length} color={Colors.status.watchlist} icon="bookmark" />
-          <StatChip label="Ended" value={ended.length} color={Colors.status.ended} icon="archive" />
           <StatChip label="Finished" value={finished} color="#10b981" icon="checkmark-circle" />
         </ScrollView>
 
@@ -168,18 +164,6 @@ export default function HomeScreen() {
           onPressShow={navigateTo}
           emptyMessage="Your watchlist is empty"
           emptySubMessage="Search for shows and save them here"
-        />
-
-        {/* Ended */}
-        <Section
-          sectionKey="ended"
-          shows={filterShows(ended, filters.ended)}
-          totalCount={ended.length}
-          filter={filters.ended}
-          onOpenFilter={() => setFilterModal('ended')}
-          onPressShow={navigateTo}
-          emptyMessage="No ended shows"
-          emptySubMessage="Concluded series will appear here"
         />
 
         {/* Finished */}
