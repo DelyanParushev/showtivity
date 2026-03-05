@@ -413,24 +413,43 @@ export async function getMdbListRatings(
     const params: Record<string, string> = { i: imdbId };
     if (apiKey) params.apikey = apiKey;
     const response = await axios.get('https://mdblist.com/api/', { params });
-    const data = response.data;
-    if (!data || data.title === undefined) return { imdb: null, tomatometer: null, metacritic: null };
-    const ratings: { source: string; value: number | null }[] = data.ratings ?? [];
-    const find = (src: string): string | null => {
-      const r = ratings.find((x) => x.source === src);
-      return r && r.value !== null && r.value > 0 ? String(r.value) : null;
-    };
-    const imdbVal = find('imdb');
-    const rtVal = find('tomatoes');
-    const mcVal = find('metacritic');
-    return {
-      imdb: imdbVal ? `${imdbVal}/10` : null,
-      tomatometer: rtVal ? `${rtVal}%` : null,
-      metacritic: mcVal ? `${mcVal}/100` : null,
-    };
+    return parseMdbListData(response.data);
   } catch {
     return { imdb: null, tomatometer: null, metacritic: null };
   }
+}
+
+/**
+ * Web-safe wrapper: calls our own /api/ratings proxy to avoid CORS.
+ * The proxy fetches MDBList server-side and returns the same JSON.
+ */
+export async function getMdbListRatingsProxy(
+  imdbId: string
+): Promise<OmdbRatings> {
+  if (!imdbId) return { imdb: null, tomatometer: null, metacritic: null };
+  try {
+    const response = await axios.get(`/api/ratings?imdbId=${encodeURIComponent(imdbId)}`);
+    return parseMdbListData(response.data);
+  } catch {
+    return { imdb: null, tomatometer: null, metacritic: null };
+  }
+}
+
+function parseMdbListData(data: any): OmdbRatings {
+  if (!data || data.title === undefined) return { imdb: null, tomatometer: null, metacritic: null };
+  const ratings: { source: string; value: number | null }[] = data.ratings ?? [];
+  const find = (src: string): string | null => {
+    const r = ratings.find((x) => x.source === src);
+    return r && r.value !== null && r.value > 0 ? String(r.value) : null;
+  };
+  const imdbVal = find('imdb');
+  const rtVal = find('tomatoes');
+  const mcVal = find('metacritic');
+  return {
+    imdb: imdbVal ? `${imdbVal}/10` : null,
+    tomatometer: rtVal ? `${rtVal}%` : null,
+    metacritic: mcVal ? `${mcVal}/100` : null,
+  };
 }
 
 export interface TmdbCastMember {

@@ -19,6 +19,21 @@ WebBrowser.maybeCompleteAuthSession();
 export default function LoginScreen() {
   const { login, handleCallback, isLoading, error, clearError } = useAuthStore();
 
+  // Fallback for Android: when Chrome Custom Tab closes via deep link instead
+  // of returning the URL through openAuthSessionAsync, the Linking event fires.
+  // handleCallback has a dedup guard so this won't double-process.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const sub = Linking.addEventListener('url', async ({ url }) => {
+      try {
+        const parsed = new URL(url);
+        const code = parsed.searchParams.get('code');
+        if (code) await handleCallback(code);
+      } catch {}
+    });
+    return () => sub.remove();
+  }, []);
+
   // Handle OAuth redirect on web (check URL params on mount)
   useEffect(() => {
     if (Platform.OS !== 'web') return;

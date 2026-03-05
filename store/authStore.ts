@@ -18,6 +18,10 @@ import type { TraktAuthTokens, TraktUser } from '../types/trakt';
 
 WebBrowser.maybeCompleteAuthSession();
 
+// Prevents both openAuthSessionAsync inline handler AND the Linking fallback
+// listener from processing the same code simultaneously.
+let _processingAuth = false;
+
 interface AuthState {
   tokens: TraktAuthTokens | null;
   user: TraktUser | null;
@@ -78,8 +82,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (Platform.OS === 'web') {
       window.location.href = authUrl;
     } else {
-      // openAuthSessionAsync returns the full redirect URL directly
-      // (showtivity://auth/callback?code=...) — extract code and handle inline.
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
       if (result.type === 'success' && result.url) {
         const Linking = await import('expo-linking');
@@ -88,13 +90,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (code) {
           await get().handleCallback(code);
         }
+      } else if (result.type === 'cancel') {
+        // User explicitly cancelled — show nothing, just unblock the button
       }
+      // If result.type === 'dismiss', the deep link may have re-opened the app
+      // and the Linking listener in login.tsx will handle the code.
     }
   },
 
   clearError: () => set({ error: null }),
 
   handleCallback: async (code: string) => {
+    if (_processingAuth) return;
+    _processingAuth = true;
     set({ isLoading: true, error: null });
     try {
       const redirectUri =
@@ -113,6 +121,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         'Sign-in failed. Please try again.';
       set({ error: String(msg) });
     } finally {
+      _processingAuth = false;
       set({ isLoading: false });
     }
   },

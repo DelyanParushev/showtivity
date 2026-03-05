@@ -16,7 +16,7 @@ import {
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { getShowDetails, getNextEpisode, getTmdbPoster, getTmdbCast, getMdbListRatings } from '../../services/traktApi';
+import { getShowDetails, getNextEpisode, getTmdbPoster, getTmdbCast, getMdbListRatings, getMdbListRatingsProxy } from '../../services/traktApi';
 import { useAddToWatchlist, useRemoveFromWatchlist, useAllShows, useMarkEpisodeWatched, useShowProgressDetail } from '../../hooks/useShows';
 import { useAuthStore } from '../../store/authStore';
 import { Colors, Radius, Spacing, Typography, CategoryConfig } from '../../constants/theme';
@@ -89,8 +89,11 @@ export default function ShowDetailScreen() {
   const imdbId = show?.ids.imdb;
   const { data: omdbRatings } = useQuery({
     queryKey: ['mdbRatings', imdbId, 'v2'],
-    queryFn: () => getMdbListRatings(imdbId!, MDBLIST_CONFIG.API_KEY),
-    enabled: !!imdbId && Platform.OS !== 'web', // mdblist.com has no CORS headers
+    queryFn: () =>
+      Platform.OS === 'web'
+        ? getMdbListRatingsProxy(imdbId!)
+        : getMdbListRatings(imdbId!, MDBLIST_CONFIG.API_KEY),
+    enabled: !!imdbId,
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
   });
