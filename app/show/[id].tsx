@@ -196,32 +196,32 @@ export default function ShowDetailScreen() {
                     </Text>
                   </View>
                 )}
-              </View>
-            </View>
 
-            {/* Ratings row inside hero */}
-            <View style={styles.heroRatings}>
-              {omdbRatings?.imdb && (
-                <View style={styles.ratingChip}>
-                  <Ionicons name="star" size={12} color="#F5C518" />
-                  <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
-                  <Text style={styles.ratingChipLabel}>IMDb</Text>
+                {/* Ratings row */}
+                <View style={styles.heroRatings}>
+                  {omdbRatings?.imdb && (
+                    <View style={styles.ratingChip}>
+                      <View style={styles.imdbLogo}>
+                        <Text style={styles.imdbLogoText}>IMDb</Text>
+                      </View>
+                      <Text style={styles.ratingChipText}>{omdbRatings.imdb}</Text>
+                    </View>
+                  )}
+                  {omdbRatings?.tomatometer && (
+                    <View style={styles.ratingChip}>
+                      <Text style={styles.ratingEmoji}>🍅</Text>
+                      <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
+                    </View>
+                  )}
+                  {tmdbImages?.tmdbRating && (
+                    <View style={styles.ratingChip}>
+                      <Text style={styles.ratingEmoji}>🍿</Text>
+                      <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
+                      <Text style={styles.ratingChipLabel}>TMDB</Text>
+                    </View>
+                  )}
                 </View>
-              )}
-              {omdbRatings?.tomatometer && (
-                <View style={styles.ratingChip}>
-                  <Text style={styles.ratingEmoji}>🍅</Text>
-                  <Text style={styles.ratingChipText}>{omdbRatings.tomatometer}</Text>
-                  <Text style={styles.ratingChipLabel}>RT</Text>
-                </View>
-              )}
-              {tmdbImages?.tmdbRating && (
-                <View style={styles.ratingChip}>
-                  <Text style={styles.ratingEmoji}>🍿</Text>
-                  <Text style={styles.ratingChipText}>{tmdbImages.tmdbRating}%</Text>
-                  <Text style={styles.ratingChipLabel}>TMDB</Text>
-                </View>
-              )}
+              </View>
             </View>
           </View>
         </View>
@@ -655,6 +655,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.xs,
+    marginTop: Spacing.xs,
   },
   ratingChip: {
     flexDirection: 'row',
@@ -676,6 +677,18 @@ const styles = StyleSheet.create({
   },
   ratingEmoji: {
     fontSize: 12,
+  },
+  imdbLogo: {
+    backgroundColor: '#F5C518',
+    borderRadius: 3,
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+  },
+  imdbLogoText: {
+    color: '#000',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.2,
   },
   // Actions
   actions: {
