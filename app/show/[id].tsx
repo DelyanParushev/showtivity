@@ -325,7 +325,7 @@ export default function ShowDetailScreen() {
                       {markWatchedMutation.isPending ? (
                         <ActivityIndicator size="small" color="#fff" />
                       ) : (
-                        <Text style={styles.markWatchedBtnText}>Mark watched</Text>
+                        <Text style={styles.markWatchedBtnText}>Mark as watched</Text>
                       )}
                     </TouchableOpacity>
                   </View>
@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.sm,
   },
   progressStatLabel: {
-    color: Colors.text.muted,
+    color: Colors.text.secondary,
   },
   progressPct: {
     color: Colors.status.watching,
@@ -765,7 +765,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   currentEpCode: {
-    color: Colors.text.muted,
+    color: Colors.text.secondary,
     fontSize: Typography.xs,
     fontWeight: '600',
   },
@@ -775,11 +775,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   markWatchedBtn: {
-    backgroundColor: Colors.accent.primary,
-    borderRadius: Radius.md,
+    backgroundColor: Colors.status.watching,
+    borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: 7,
-    minWidth: 100,
+    minWidth: 110,
     alignItems: 'center',
   },
   markWatchedBtnText: {
