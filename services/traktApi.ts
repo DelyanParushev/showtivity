@@ -52,13 +52,14 @@ export async function exchangeCodeForTokens(
  * Refresh an expired access token using the refresh token.
  */
 export async function refreshAccessToken(
-  refreshToken: string
+  refreshToken: string,
+  redirectUri?: string
 ): Promise<TraktAuthTokens> {
   const response = await axios.post<TraktAuthTokens>(TRAKT_CONFIG.TOKEN_URL, {
     refresh_token: refreshToken,
     client_id: TRAKT_CONFIG.CLIENT_ID,
     client_secret: TRAKT_CONFIG.CLIENT_SECRET,
-    redirect_uri: TRAKT_CONFIG.REDIRECT_URI_NATIVE,
+    ...(redirectUri ? { redirect_uri: redirectUri } : {}),
     grant_type: 'refresh_token',
   });
   return response.data;

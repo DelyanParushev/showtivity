@@ -21,6 +21,33 @@ WebBrowser.maybeCompleteAuthSession();
 // Prevents both openAuthSessionAsync inline handler AND the Linking fallback
 // listener from processing the same code simultaneously.
 let _processingAuth = false;
+let _refreshPromise: Promise<TraktAuthTokens> | null = null;
+
+const getRedirectUri = () =>
+  Platform.OS === 'web'
+    ? TRAKT_CONFIG.REDIRECT_URI_WEB
+    : TRAKT_CONFIG.REDIRECT_URI_NATIVE;
+
+const isRefreshAuthError = (err: any) => {
+  const status = err?.response?.status;
+  const oauthError = err?.response?.data?.error;
+  return (
+    status === 400 ||
+    status === 401 ||
+    oauthError === 'invalid_grant' ||
+    oauthError === 'invalid_client' ||
+    oauthError === 'invalid_request'
+  );
+};
+
+const refreshTokens = async (refreshToken: string) => {
+  if (!_refreshPromise) {
+    _refreshPromise = refreshAccessToken(refreshToken, getRedirectUri()).finally(() => {
+      _refreshPromise = null;
+    });
+  }
+  return _refreshPromise;
+};
 
 interface AuthState {
   tokens: TraktAuthTokens | null;
@@ -47,21 +74,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: async () => {
     set({ isLoading: true });
+    let stored: TraktAuthTokens | null = null;
     try {
-      const stored = await loadTokens();
+      stored = await loadTokens();
       if (!stored) {
         set({ isLoading: false });
         return;
       }
       let tokens = stored;
       if (isTokenExpired(tokens)) {
-        tokens = await refreshAccessToken(tokens.refresh_token);
-        await saveTokens(tokens);
+        try {
+          tokens = await refreshTokens(tokens.refresh_token);
+          await saveTokens(tokens);
+        } catch (err) {
+          if (isRefreshAuthError(err)) {
+            await clearTokens();
+            set({ tokens: null, user: null, isAuthenticated: false });
+            return;
+          }
+          set({ tokens, user: null, isAuthenticated: true });
+          return;
+        }
       }
       const user = await getMe(tokens.access_token);
       set({ tokens, user, isAuthenticated: true });
-    } catch {
-      await clearTokens();
+    } catch (err) {
+      if (isRefreshAuthError(err)) {
+        await clearTokens();
+        set({ tokens: null, user: null, isAuthenticated: false });
+        return;
+      }
+      if (stored) {
+        set({ tokens: stored, user: null, isAuthenticated: true });
+      }
     } finally {
       set({ isLoading: false });
     }
@@ -142,12 +187,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!tokens) return null;
     if (isTokenExpired(tokens)) {
       try {
-        tokens = await refreshAccessToken(tokens.refresh_token);
+        tokens = await refreshTokens(tokens.refresh_token);
         await saveTokens(tokens);
         set({ tokens });
-      } catch {
-        await clearTokens();
-        set({ tokens: null, user: null, isAuthenticated: false });
+      } catch (err) {
+        if (isRefreshAuthError(err)) {
+          await clearTokens();
+          set({ tokens: null, user: null, isAuthenticated: false });
+        }
         return null;
       }
     }
