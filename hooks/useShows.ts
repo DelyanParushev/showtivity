@@ -53,14 +53,15 @@ export function useAllShows() {
   return useQuery<EnrichedShow[]>({
     queryKey: queryKeys.allShows,
     queryFn: async () => {
-      const token = await getValidToken();
-      if (!token) return [];
+      try {
+        const token = await getValidToken();
+        if (!token) return [];
 
-      // Parallel: fetch watchlist and watched shows
-      const [watchlistItems, watchedItems] = await Promise.all([
-        getWatchlist(token),
-        getWatchedShows(token),
-      ]);
+        // Parallel: fetch watchlist and watched shows
+        const [watchlistItems, watchedItems] = await Promise.all([
+          getWatchlist(token),
+          getWatchedShows(token),
+        ]);
 
       // Filter to shows only — the watchlist can contain movies/episodes too
       const showWatchlist = watchlistItems.filter(
@@ -208,7 +209,10 @@ export function useAllShows() {
         })
       );
 
-      return enriched;
+        return enriched;
+      } catch {
+        return [];
+      }
     },
     enabled: isAuthenticated && !isAuthLoading,
     staleTime: 5 * 60 * 1000, // 5 min
@@ -423,7 +427,7 @@ export function useCategorizedShows() {
       // Any actively-watched show with a confirmed future date belongs on the
       // Airing page — regardless of Trakt status string (could be 'in production',
       // 'planned', etc.) as long as daysUntilNext is today or in the future.
-      if (s.category === 'watching' && s.daysUntilNext !== null && s.daysUntilNext >= 0) return true;
+      if (s.category === 'watching' && s.daysUntilNext != null && s.daysUntilNext >= 0) return true;
       return false;
     })
     .sort((a, b) => (a.daysUntilNext ?? 9999) - (b.daysUntilNext ?? 9999));
@@ -438,7 +442,7 @@ export function useCategorizedShows() {
   // shows whose season ended and next season has no date yet, etc.
   const awaitingRelease = shows.filter((s) => {
     if (ENDED_STATUSES.includes(s.show.status)) return false;
-    if (s.daysUntilNext !== null && s.daysUntilNext >= 0) return false; // has a confirmed future date
+    if (s.daysUntilNext != null && s.daysUntilNext >= 0) return false; // has a confirmed future date
     if (s.category === 'watching') return true; // any actively-tracked show
     if (s.category === 'waiting') return true;
     if (s.category === 'watchlist') {
@@ -474,8 +478,12 @@ export function useSeasons(slug: string) {
   return useQuery<TraktSeason[]>({
     queryKey: queryKeys.seasons(slug),
     queryFn: async () => {
-      const token = await getValidToken();
-      return getSeasons(slug, token ?? undefined);
+      try {
+        const token = await getValidToken();
+        return getSeasons(slug, token ?? undefined);
+      } catch {
+        return [];
+      }
     },
     enabled: Boolean(slug),
     staleTime: 60 * 60 * 1000, // season list rarely changes
@@ -488,8 +496,12 @@ export function useSeasonEpisodes(slug: string, season: number, enabled = true) 
   return useQuery<TraktSeasonEpisode[]>({
     queryKey: queryKeys.seasonEpisodes(slug, season),
     queryFn: async () => {
-      const token = await getValidToken();
-      return getSeasonEpisodes(slug, season, token ?? undefined);
+      try {
+        const token = await getValidToken();
+        return getSeasonEpisodes(slug, season, token ?? undefined);
+      } catch {
+        return [];
+      }
     },
     enabled: Boolean(slug) && season > 0 && enabled,
     staleTime: 60 * 60 * 1000,
@@ -503,9 +515,13 @@ export function useShowProgressDetail(slug: string, isInMyShows: boolean) {
   return useQuery({
     queryKey: queryKeys.showProgressDetail(slug),
     queryFn: async () => {
-      const token = await getValidToken();
-      if (!token) return null;
-      return getShowProgress(token, slug);
+      try {
+        const token = await getValidToken();
+        if (!token) return null;
+        return getShowProgress(token, slug);
+      } catch {
+        return null;
+      }
     },
     enabled: Boolean(slug) && isInMyShows,
     staleTime: 2 * 60 * 1000,
@@ -525,7 +541,6 @@ export function useMarkEpisodeWatched(showSlug: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.showProgressDetail(showSlug) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
     },
   });
 }
@@ -542,7 +557,6 @@ export function useUnmarkEpisodeWatched(showSlug: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.showProgressDetail(showSlug) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
     },
   });
 }
@@ -559,7 +573,6 @@ export function useMarkSeasonWatched(showSlug: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.showProgressDetail(showSlug) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
     },
   });
 }
@@ -576,7 +589,6 @@ export function useUnmarkSeasonWatched(showSlug: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.showProgressDetail(showSlug) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.allShows });
     },
   });
 }
